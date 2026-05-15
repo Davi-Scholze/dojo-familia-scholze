@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Meu Dojo — Novas Ideias da Sessão</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --preto: #0a0a0a;
+    --vermelho: #c0392b;
+    --vermelho-escuro: #922b21;
+    --dourado: #d4a017;
+    --branco: #f5f0eb;
+    --cinza: #1a1a1a;
+    --cinza-medio: #2a2a2a;
+    --cinza-claro: #3a3a3a;
+    --texto-muted: #888;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--preto);
+    color: var(--branco);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--cinza);
+    border-bottom: 3px solid var(--vermelho);
+    padding: 48px 40px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '🥋';
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 120px;
+    opacity: 0.06;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--vermelho);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 6vw, 72px);
+    letter-spacing: 2px;
+    color: var(--branco);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  header h1 span {
+    color: var(--vermelho);
+  }
+
+  header p {
+    color: var(--texto-muted);
+    font-size: 14px;
+    font-style: italic;
+  }
+
+  .aviso {
+    background: var(--dourado);
+    color: var(--preto);
+    padding: 12px 40px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+
+  /* SEÇÕES */
+  .secao {
+    margin-bottom: 48px;
+    border-left: 3px solid var(--vermelho);
+    padding-left: 24px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .secao:nth-child(1) { animation-delay: 0.1s; }
+  .secao:nth-child(2) { animation-delay: 0.2s; }
+  .secao:nth-child(3) { animation-delay: 0.3s; }
+  .secao:nth-child(4) { animation-delay: 0.4s; }
+  .secao:nth-child(5) { animation-delay: 0.5s; }
+  .secao:nth-child(6) { animation-delay: 0.6s; }
+  .secao:nth-child(7) { animation-delay: 0.7s; }
+  .secao:nth-child(8) { animation-delay: 0.8s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .secao-numero {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--vermelho);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .secao h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 1px;
+    color: var(--branco);
+    margin-bottom: 16px;
+  }
+
+  .secao p {
+    color: #bbb;
+    margin-bottom: 12px;
+  }
+
+  /* TAGS MVP/FUTURO */
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .tag-mvp {
+    background: #1a4a1a;
+    color: #4caf50;
+    border: 1px solid #2d7a2d;
+  }
+
+  .tag-futuro {
+    background: #1a1a3a;
+    color: #7c8cf8;
+    border: 1px solid #3a3a6a;
+  }
+
+  /* ITENS DE LISTA */
+  .lista {
+    list-style: none;
+    margin-top: 12px;
+  }
+
+  .lista li {
+    padding: 10px 16px;
+    background: var(--cinza-medio);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    color: #ccc;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .lista li::before {
+    content: '→';
+    color: var(--vermelho);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* GRID DE CARDS */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .card {
+    background: var(--cinza-medio);
+    border: 1px solid var(--cinza-claro);
+    border-radius: 6px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--vermelho);
+  }
+
+  .card-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  .card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--branco);
+    margin-bottom: 8px;
+  }
+
+  .card p {
+    font-size: 13px;
+    color: #999;
+    margin: 0;
+  }
+
+  /* ECOSSISTEMA */
+  .ecossistema {
+    background: var(--cinza-medio);
+    border: 1px solid var(--cinza-claro);
+    border-radius: 8px;
+    padding: 28px;
+    margin-top: 16px;
+  }
+
+  .membro {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--cinza-claro);
+  }
+
+  .membro:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .membro-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--vermelho-escuro);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .membro-info h4 {
+    font-weight: 700;
+    color: var(--branco);
+    margin-bottom: 2px;
+    font-size: 14px;
+  }
+
+  .membro-info p {
+    font-size: 13px;
+    color: #888;
+    margin: 0;
+  }
+
+  /* FASES */
+  .fases {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .fase {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--cinza-medio);
+    border-radius: 6px;
+    padding: 14px 20px;
+  }
+
+  .fase-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--vermelho);
+    line-height: 1;
+    width: 32px;
+    flex-shrink: 0;
+  }
+
+  .fase-info h4 {
+    font-weight: 700;
+    color: var(--branco);
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+
+  .fase-info p {
+    font-size: 13px;
+    color: #888;
+    margin: 0;
+  }
+
+  /* CITAÇÃO */
+  .citacao {
+    border-left: 4px solid var(--dourado);
+    padding: 16px 20px;
+    background: #1a1500;
+    border-radius: 0 6px 6px 0;
+    margin: 20px 0;
+    font-style: italic;
+    color: var(--dourado);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  /* TABELA */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    font-size: 14px;
+  }
+
+  th {
+    background: var(--vermelho-escuro);
+    color: white;
+    padding: 10px 16px;
+    text-align: left;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--cinza-claro);
+    color: #ccc;
+  }
+
+  tr:nth-child(even) td {
+    background: var(--cinza-medio);
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--cinza-claro);
+    margin: 48px 0;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--cinza);
+    border-top: 3px solid var(--vermelho);
+    padding: 32px 40px;
+    text-align: center;
+    color: var(--texto-muted);
+    font-size: 13px;
+  }
+
+  footer strong {
+    color: var(--branco);
+  }
+
+  /* PRÓXIMOS PASSOS */
+  .proximos {
+    background: linear-gradient(135deg, #1a0a0a, #0a0a1a);
+    border: 1px solid var(--vermelho);
+    border-radius: 8px;
+    padding: 28px;
+    margin-top: 16px;
+  }
+
+  .passo {
+    display: flex;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid #222;
+    font-size: 14px;
+    color: #ccc;
+  }
+
+  .passo:last-child { border-bottom: none; }
+
+  .passo-num {
+    color: var(--vermelho);
+    font-weight: 700;
+    flex-shrink: 0;
+    width: 24px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">Sessão Mobile — Novas Ideias</div>
+  <h1>App <span>Meu</span> Dojo</h1>
+  <p>Documento de atualização — ideias novas surgidas na sessão mobile para integrar ao contexto principal</p>
+</header>
+
+<div class="aviso">
+  ⚠️ ATENÇÃO: Este documento contém APENAS as ideias novas desta sessão. O contexto completo já foi passado para a outra sessão no computador.
+</div>
+
+<div class="container">
+
+  <!-- IDEIA 1 -->
+  <div class="secao">
+    <div class="secao-numero">Nova Ideia 01</div>
+    <h2>White Label — Expansão para Outras Modalidades</h2>
+    <p>O App Meu Dojo foi desenhado para judô e jiujítsu, mas a estrutura do sistema serve para qualquer professor de qualquer modalidade.</p>
+
+    <div class="citacao">
+      "Um sistema só por baixo. Em cima, marcas diferentes para cada público."
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🥋</div>
+        <h3>App Meu Dojo</h3>
+        <p>Judô, Jiujítsu, Caratê, Muay Thai</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚽</div>
+        <h3>App Meu Campo</h3>
+        <p>Futsal, Futebol, Society</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💃</div>
+        <h3>App Meu Estúdio</h3>
+        <p>Dança, Ballet, Ginástica</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏊</div>
+        <h3>App Minha Piscina</h3>
+        <p>Natação, Hidroginástica</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎾</div>
+        <h3>App Minha Quadra</h3>
+        <p>Tênis, Vôlei, Basquete</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎵</div>
+        <h3>App Minha Aula</h3>
+        <p>Música, Idiomas, Reforço</p>
+      </div>
+    </div>
+
+    <ul class="lista" style="margin-top:16px">
+      <li>Cada app tem nome, visual e terminologia própria</li>
+      <li>Por baixo é um único sistema — um único código, uma única infraestrutura</li>
+      <li>Começa pelo Meu Dojo, expande quando validado</li>
+      <li>Arquitetura já pensada para white label desde o início</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- IDEIA 2 -->
+  <div class="secao">
+    <div class="secao-numero">Nova Ideia 02</div>
+    <h2>Marketplace de Serviços Criativos <span class="tag tag-mvp">Versão simples no MVP</span></h2>
+    <p>Dentro do App Meu Dojo, o professor pode solicitar serviços digitais e criativos para sua academia — sem precisar sair da plataforma.</p>
+
+    <ul class="lista">
+      <li>Criação de site personalizado para a academia</li>
+      <li>Criação e gestão de perfil no Instagram</li>
+      <li>Serviço de gravação de vídeo e áudio profissional</li>
+      <li>Fotografia profissional da academia e dos alunos</li>
+      <li>Tráfego pago estruturado com Analytics integrado</li>
+    </ul>
+
+    <div class="grid" style="margin-top:16px">
+      <div class="card">
+        <div class="card-icon">🚀</div>
+        <h3>MVP — Versão Simples</h3>
+        <p>Professor solicita, a equipe executa manualmente. Simples, rápido, validado.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏪</div>
+        <h3>Futuro — Marketplace</h3>
+        <p>Prestadores cadastrados (fotógrafos, videomakers, designers) recebem pedidos pelo app.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- IDEIA 3 -->
+  <div class="secao">
+    <div class="secao-numero">Nova Ideia 03</div>
+    <h2>Ecossistema Família Showzy</h2>
+    <p>Você e sua esposa são os sócios principais da empresa. A família participa como parceiros estratégicos — não como sócios. Isso protege o negócio e as relações familiares.</p>
+
+    <div class="ecossistema">
+      <div class="membro">
+        <div class="membro-icon">👨‍💻</div>
+        <div class="membro-info">
+          <h4>Você — Sócio Principal</h4>
+          <p>Desenvolvimento, IA, sistemas, tráfego pago. Produto central.</p>
+        </div>
+      </div>
+      <div class="membro">
+        <div class="membro-icon">📸</div>
+        <div class="membro-info">
+          <h4>Sua Esposa — Sócia Principal</h4>
+          <p>Câmera profissional, edição, design, identidade visual, faculdade de moda. Diretora criativa.</p>
+        </div>
+      </div>
+      <div class="membro">
+        <div class="membro-icon">📊</div>
+        <div class="membro-info">
+          <h4>Sua Mãe — Parceira Estratégica</h4>
+          <p>Empresa de contabilidade. Indicada dentro da plataforma. Ganha clientes novos via app.</p>
+        </div>
+      </div>
+      <div class="membro">
+        <div class="membro-icon">🏢</div>
+        <div class="membro-info">
+          <h4>Seu Pai — Investidor + Primeiro Cliente</h4>
+          <p>Dojo Família Showzy = primeiro cliente e case de sucesso. Financiador inicial.</p>
+        </div>
+      </div>
+      <div class="membro">
+        <div class="membro-icon">🛡️</div>
+        <div class="membro-info">
+          <h4>Seu Irmão — Parceiro de Seguros</h4>
+          <p>Indicação de seguro do local dentro da plataforma. Todo mundo sai ganhando.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- IDEIA 4 -->
+  <div class="secao">
+    <div class="secao-numero">Nova Ideia 04</div>
+    <h2>Parceiros Indicados com Descontos <span class="tag tag-mvp">MVP</span></h2>
+    <p>Dentro da plataforma, o professor e os alunos têm acesso a parceiros estratégicos com condições especiais — porque usam o App Meu Dojo.</p>
+
+    <table>
+      <tr>
+        <th>Parceiro</th>
+        <th>Serviço</th>
+        <th>Benefício</th>
+      </tr>
+      <tr>
+        <td>Contabilidade</td>
+        <td>Gestão contábil e fiscal</td>
+        <td>Desconto exclusivo para usuários do app</td>
+      </tr>
+      <tr>
+        <td>Seguros</td>
+        <td>Seguro do local e responsabilidade</td>
+        <td>Condições especiais via indicação</td>
+      </tr>
+      <tr>
+        <td>Fotografia</td>
+        <td>Sessão de fotos profissional</td>
+        <td>Pacote exclusivo para academias no app</td>
+      </tr>
+      <tr>
+        <td>Criação de site</td>
+        <td>Site personalizado + analytics</td>
+        <td>Integrado diretamente ao app</td>
+      </tr>
+    </table>
+
+    <ul class="lista" style="margin-top:16px">
+      <li>Professor usa o parceiro → parceiro oferece desconto → plataforma ganha por indicação</li>
+      <li>Parceiros também podem oferecer descontos para a plataforma em troca de indicações</li>
+      <li>Cria um ecossistema onde todo mundo sai ganhando</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- IDEIA 5 -->
+  <div class="secao">
+    <div class="secao-numero">Nova Ideia 05</div>
+    <h2>Micro CRM + Contabilidade Integrada <span class="tag tag-mvp">MVP</span></h2>
+    <p>O app já tem estrutura de CRM básico com controle de mensalidades. A integração com contabilidade eleva isso para um nível profissional completo.</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">💳</div>
+        <h3>Micro CRM</h3>
+        <p>Cadastro de alunos, controle de mensalidades, inadimplência, histórico de pagamentos — já existe no app.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <h3>Contabilidade</h3>
+        <p>Indicação integrada da contabilidade da mãe. Professor tem gestão operacional E contábil em um só lugar.</p>
+      </div>
+    </div>
+
+    <div class="citacao">
+      "Vários coelhos com uma cajadada só — o professor não precisa sair do ecossistema para nada."
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- IDEIA 6 -->
+  <div class="secao">
+    <div class="secao-numero">Nova Ideia 06</div>
+    <h2>Plano Organizacional / Enterprise <span class="tag tag-futuro">Futuro</span></h2>
+    <p>Grandes organizações e colégios podem administrar múltiplas atividades e professores dentro de uma única conta mãe.</p>
+
+    <ul class="lista">
+      <li>Associações esportivas com múltiplos professores afiliados</li>
+      <li>Colégios com múltiplas atividades (futsal, judô, natação, dança — tudo no mesmo painel)</li>
+      <li>Redes de academias e franquias</li>
+      <li>Grandes organizações como redes de academias de jiujítsu</li>
+      <li>Conta mãe administra todos os professores, turmas e modalidades</li>
+      <li>Ticket muito maior — empresas pagam mais por planos enterprise</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- IDEIA 7 -->
+  <div class="secao">
+    <div class="secao-numero">Nova Ideia 07</div>
+    <h2>Arquitetura de 3 Projects Claude</h2>
+    <p>Estratégia de desenvolvimento usando 3 sessões do Claude em paralelo, coordenadas por um arquivo mestre no Drive.</p>
+
+    <div class="fases">
+      <div class="fase">
+        <div class="fase-num">1</div>
+        <div class="fase-info">
+          <h4>🎯 Project Orquestrador</h4>
+          <p>Contexto geral completo. Coordena os outros dois. Atualiza o arquivo mestre no Drive após cada ação. Você opera aqui estrategicamente.</p>
+        </div>
+      </div>
+      <div class="fase">
+        <div class="fase-num">2</div>
+        <div class="fase-info">
+          <h4>⚙️ Project Pedreiro 1</h4>
+          <p>Focado em backend, regras de negócio, banco de dados. Antes de agir, lê o arquivo mestre. Depois de agir, reporta para o orquestrador.</p>
+        </div>
+      </div>
+      <div class="fase">
+        <div class="fase-num">3</div>
+        <div class="fase-info">
+          <h4>🎨 Project Pedreiro 2</h4>
+          <p>Focado em frontend, UX, protótipo visual, design. Mesmo fluxo de consulta e reporte.</p>
+        </div>
+      </div>
+    </div>
+
+    <ul class="lista" style="margin-top:16px">
+      <li>Arquivo mestre no Drive = cérebro compartilhado entre os 3 projects</li>
+      <li>Toda ação passa por revisão e registro no arquivo mestre</li>
+      <li>Os projetos se comunicam através do orquestrador — não diretamente</li>
+      <li>Você coordena os 3 como gestor do projeto</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- IDEIA 8 -->
+  <div class="secao">
+    <div class="secao-numero">Nova Ideia 08</div>
+    <h2>Estrutura da Empresa</h2>
+    <p>Como organizar tudo de forma limpa e inteligente.</p>
+
+    <table>
+      <tr>
+        <th>Camada</th>
+        <th>O que é</th>
+        <th>Quem</th>
+      </tr>
+      <tr>
+        <td>Empresa principal</td>
+        <td>Dona do App Meu Dojo e todos os produtos</td>
+        <td>Você + esposa (sócios)</td>
+      </tr>
+      <tr>
+        <td>Serviços digitais</td>
+        <td>Site, fotos, Instagram, tráfego</td>
+        <td>Você + esposa</td>
+      </tr>
+      <tr>
+        <td>Parceiro contábil</td>
+        <td>Gestão contábil dos clientes</td>
+        <td>Sua mãe (parceira)</td>
+      </tr>
+      <tr>
+        <td>Parceiro seguros</td>
+        <td>Seguro do local e responsabilidade</td>
+        <td>Seu irmão (parceiro)</td>
+      </tr>
+      <tr>
+        <td>Primeiro cliente</td>
+        <td>Dojo Família Showzy — case de sucesso</td>
+        <td>Seu pai</td>
+      </tr>
+    </table>
+
+    <div class="citacao">
+      "Meu maior objetivo é todo mundo sair ganhando."
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- PRÓXIMOS PASSOS -->
+  <div class="secao">
+    <div class="secao-numero">Próximos Passos</div>
+    <h2>O Que Fazer na Próxima Sessão</h2>
+
+    <div class="proximos">
+      <div class="passo">
+        <span class="passo-num">01</span>
+        <span>Integrar estas novas ideias ao documento mestre da sessão no computador</span>
+      </div>
+      <div class="passo">
+        <span class="passo-num">02</span>
+        <span>Validar o nome do "Caderno do Sensei" (opções: Caderno do Sensei, Diário do Mestre, Livro do Sensei)</span>
+      </div>
+      <div class="passo">
+        <span class="passo-num">03</span>
+        <span>Confirmar acesso do aluno ao script da aula como MVP</span>
+      </div>
+      <div class="passo">
+        <span class="passo-num">04</span>
+        <span>Mapear a perspectiva do dono/criador da plataforma</span>
+      </div>
+      <div class="passo">
+        <span class="passo-num">05</span>
+        <span>Mapear a perspectiva comercial — preços dos planos, estratégia de venda</span>
+      </div>
+      <div class="passo">
+        <span class="passo-num">06</span>
+        <span>Iniciar estruturação técnica do MVP</span>
+      </div>
+      <div class="passo">
+        <span class="passo-num">07</span>
+        <span>Criar protótipo visual e documento técnico para o desenvolvedor</span>
+      </div>
+      <div class="passo">
+        <span class="passo-num">08</span>
+        <span>Configurar os 3 Projects do Claude com o arquivo mestre compartilhado</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <strong>App Meu Dojo</strong> — Documento de Novas Ideias da Sessão Mobile<br>
+  <span style="color:#555">Integrar ao contexto principal na sessão do computador</span>
+</footer>
+
+</body>
+</html>
