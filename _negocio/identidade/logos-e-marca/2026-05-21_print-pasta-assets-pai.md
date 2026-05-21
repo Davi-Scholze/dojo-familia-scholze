@@ -16,7 +16,7 @@ ocr: |
   Scholze Certificado...
   Scholze Logo Redondo
 pendente:
-  - CRITICO: Davi precisa pegar os arquivos reais dessa pasta (logo .svg/.png alta, fonte .ttf, banner) e copiar pra _negocio/identidade/logos-e-marca/. Sem isso, design-guide do app nao tem fonte editavel.
+  - PARCIALMENTE RESOLVIDO 2026-05-21 (mesma sessao): 4 assets entregues em ./oficial/ (logo redondo branco, logo retangular preto, banner youtube, certificado). Ainda faltam: logo redondo preto, logo retangular branco, fonte .ttf, patch lapela, guia identidade visual, SVGs vetoriais. Ver ./oficial/INDEX.md para lista completa.
 related:
   - ../presenca-digital/2026-05-21_canal-youtube.png (banner em uso)
 ---
