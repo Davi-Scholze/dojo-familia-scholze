@@ -1,0 +1,22 @@
+{
+  "name": "@dojo-fs/lib",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Schemas Zod + helpers BR (date + currency) compartilhados",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schemas/*": "./src/schemas/*.ts",
+    "./helpers/*": "./src/helpers/*.ts"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "echo '(lint delegated to consumer apps)'"
+  }
+}
