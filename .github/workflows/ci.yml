@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    name: Build ${{ matrix.workspace }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: [apps/site, apps/app]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (root workspaces)
+        run: npm ci
+
+      - name: Typecheck ${{ matrix.workspace }}
+        run: npm run typecheck --workspace=${{ matrix.workspace }}
+
+      - name: Build ${{ matrix.workspace }}
+        run: npm run build --workspace=${{ matrix.workspace }}
+        env:
+          # Placeholders pra build CI passar (valores reais no Vercel dashboard)
+          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder.anon.key"
+          VITE_SUPABASE_URL: "https://placeholder.supabase.co"
+          VITE_SUPABASE_ANON_KEY: "placeholder.anon.key"
+
+  typecheck-packages:
+    name: Typecheck workspaces packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck --workspace=packages/ui
+      - run: npm run typecheck --workspace=packages/lib
+      - run: npm run typecheck --workspace=packages/supabase
