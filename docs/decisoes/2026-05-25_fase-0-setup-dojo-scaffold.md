@@ -1,7 +1,7 @@
 ---
 tipo: spec
 data: 2026-05-25
-status: aberto
+status: em-andamento
 escopo: dojo-familia-scholze (case 0 KOD.AI agência)
 nivel_operacional: L1
 related:
@@ -211,6 +211,199 @@ Mensuráveis e verificáveis por comando ou screenshot:
 - [ ] Git history com ≥ 5 commits atômicos seguindo Conventional Commits PT-BR (ex: `chore(monorepo): inicializa workspaces`, `feat(packages/ui): tokens identidade visual`, `feat(supabase): schema inicial multi-tenant`, `feat(apps/app): PWA setup vite-plugin-pwa`, `feat(apps/site): landing minimal Next.js`)
 - [ ] Evidence Bloc da Fase 0 escrito ao final do `/complete` com timestamp + comando rodado + output literal + critério + resultado (regra-base 11 KOD.AI)
 
+## Tasks
+
+> Decomposição em 12 tasks atômicas (regra-base 7: 1 task = 1 commit ideal). DAG com paralelismo declarado após T2. Soma estimada: **~9h30min** trabalho focado (Davi solo, 2-3 sessões noturnas).
+
+### DAG resumido
+
+```
+T1 (preflight)
+├── T2 (monorepo init) ─┬─ T3 (ui)  ─┐
+│                       ├─ T4 (lib) ─┼─ T6 (site) ─┐
+│                       └─ T5 (sb)  ─┴─ T7 (app)  ─┼─ T9 (i18n) ─┐
+│                                                  │             ├─ T11 (docs) ─ T12 (complete)
+│                                                  └─ T10 (CI)  ─┘
+└── T8 (supabase project) ──────────────────────────────────────┘ (paralelo a T2-T7)
+```
+
+### T1 — Pré-flight ambiente local
+
+- **Tipo:** setup
+- **Depende de:** _(nenhuma)_
+- **Estimativa:** 15min
+- **Critério de done:**
+  - [ ] `node -v` ≥ v20.0.0
+  - [ ] `npm -v` ≥ v10.0.0
+  - [ ] `gh auth status` mostra `Davi-Scholze (keyring)` válido
+  - [ ] `git -C Repositorios/dojo-familia-scholze status` retorna clean (sem arquivos pendentes)
+  - [ ] Workaround env var fantasma documentado: `GITHUB_TOKEN= git ...` quando push for necessário nesta sessão
+- **Commit alvo:** _(sem commit — só verificação)_
+- **Notas:** Se Node <20, orientar `nvm install 20 && nvm use 20`. Se gh auth falhar, abortar Fase 0 e resolver auth antes.
+
+### T2 — Inicializar monorepo npm workspaces + .gitignore
+
+- **Tipo:** setup
+- **Depende de:** T1
+- **Estimativa:** 30min
+- **Critério de done:**
+  - [ ] `package.json` raiz declara `"workspaces": ["apps/*", "packages/*"]` + `"packageManager": "npm@10.x"`
+  - [ ] `.gitignore` cobre: `node_modules/`, `dist/`, `.next/`, `.turbo/`, `.env*` (exceto `.env.example`), `.vercel/`, `coverage/`, `.DS_Store`, `Thumbs.db`, `*.log`, `.idea/`, `.vscode/` (parcial)
+  - [ ] `npm install` na raiz exit 0
+  - [ ] Hook `gitignore-aditivo.md` respeitado (criar via `Write`, não redirect)
+- **Commit alvo:** `chore(monorepo): inicializa npm workspaces + .gitignore`
+
+### T3 — Scaffold packages/ui (Tailwind + shadcn/ui + design tokens)
+
+- **Tipo:** feature
+- **Depende de:** T2
+- **Estimativa:** 1h
+- **Critério de done:**
+  - [ ] `packages/ui/package.json` com nome `@dojo-fs/ui`
+  - [ ] `tailwind.config.shared.ts` exportando config base (paleta + tipografia + container)
+  - [ ] `theme.ts` com tokens OKLCH derivados via colorpicker do logo oficial (preto puro `#000000`, vermelho-sangue `#D32F2F` aprox., branco `#FFFFFF`, cinza-grafite `#3E3E3E`)
+  - [ ] `components.json` shadcn/ui configurado
+  - [ ] 3 componentes base copiados: Button, Card, Input
+  - [ ] Slogan e kanji declarados em `constants.ts` (`"CEDER PARA VENCER"`, `"柔道 柔術"`)
+- **Commit alvo:** `feat(packages/ui): tokens identidade visual + tailwind shared config`
+
+### T4 — Scaffold packages/lib (Zod schemas + helpers BR)
+
+- **Tipo:** feature
+- **Depende de:** T2
+- **Estimativa:** 30min
+- **Critério de done:**
+  - [ ] `packages/lib/package.json` com nome `@dojo-fs/lib`
+  - [ ] `schemas/dojo.ts` (`DojoSchema` zod skeleton)
+  - [ ] `schemas/aluno.ts` (`AlunoSchema` zod skeleton com `nome`, `data_nascimento`, `dojo_id`, `responsavel_ids`)
+  - [ ] `helpers/date-br.ts` (formatação `DD/MM/YYYY`)
+  - [ ] `helpers/currency-brl.ts` (formatação `R$ 1.234,56`)
+  - [ ] Type exports gerados via `z.infer<typeof Schema>`
+- **Commit alvo:** `feat(packages/lib): schemas zod + helpers BR (data + moeda)`
+
+### T5 — Scaffold packages/supabase (client + types placeholder)
+
+- **Tipo:** feature
+- **Depende de:** T2
+- **Estimativa:** 30min
+- **Critério de done:**
+  - [ ] `packages/supabase/package.json` com nome `@dojo-fs/supabase`
+  - [ ] `client.ts` exportando `createClient(url, anonKey)` via `@supabase/supabase-js`
+  - [ ] `types.ts` placeholder (rodará `supabase gen types` em T8)
+  - [ ] `queries/` vazio
+  - [ ] `.env.example` na raiz do package com `SUPABASE_URL=` + `SUPABASE_ANON_KEY=` (placeholders)
+- **Commit alvo:** `feat(packages/supabase): client placeholder + types skeleton`
+
+### T6 — Scaffold apps/site (Next.js 15 landing minimal)
+
+- **Tipo:** feature
+- **Depende de:** T3, T4
+- **Estimativa:** 1h30min
+- **Critério de done:**
+  - [ ] `apps/site/package.json` com nome `@dojo-fs/site` + scripts `dev`/`build`/`start`/`typecheck`/`lint`
+  - [ ] Next.js 15 + App Router + TypeScript + Tailwind extend via `@dojo-fs/ui`
+  - [ ] `app/layout.tsx` + `app/page.tsx` renderizando logo retangular preto + slogan "CEDER PARA VENCER" + kanji
+  - [ ] Logo oficial copiado pra `public/logo-retangular-preto.png` + `public/logo-redondo-branco.png`
+  - [ ] Open Graph: `<meta>` title "Dojô Família Scholze" + description + `og-image` (banner YT como base inicial)
+  - [ ] `npm run dev --workspace=apps/site` abre `http://localhost:3000` rendering OK
+  - [ ] `npm run build --workspace=apps/site` exit 0
+- **Commit alvo:** `feat(apps/site): landing minimal Next.js 15 com identidade aplicada`
+
+### T7 — Scaffold apps/app (Vite + React 19 PWA setup completo)
+
+- **Tipo:** feature
+- **Depende de:** T3, T4, T5
+- **Estimativa:** 2h
+- **Critério de done:**
+  - [ ] `apps/app/package.json` com nome `@dojo-fs/app` + scripts `dev`/`build`/`preview`/`typecheck`/`lint`
+  - [ ] Vite 6 + React 19 + TS + React Router v6 + vite-plugin-pwa
+  - [ ] `public/manifest.json` (name "Dojô Família Scholze", short "Dojô FS", theme `#000000`, background `#000000`, display `standalone`)
+  - [ ] Service Worker via Workbox (vite-plugin-pwa registerType `autoUpdate`)
+  - [ ] Ícones PWA gerados a partir do logo redondo branco: 192x192, 256x256, 384x384, 512x512 + maskable
+  - [ ] Install prompt component placeholder (botão visível, lógica de detection)
+  - [ ] Home `/` renderizando logo + slogan + texto "Bem-vindo Sensei" (placeholder pré-auth)
+  - [ ] `npm run dev --workspace=apps/app` abre `http://localhost:5173`
+  - [ ] `npm run build --workspace=apps/app` exit 0
+  - [ ] Lighthouse PWA score ≥ 80 no build (medido via `npx lighthouse http://localhost:4173 --only-categories=pwa`)
+- **Commit alvo:** `feat(apps/app): PWA setup Vite + manifest + service worker + identidade`
+
+### T8 — Setup Supabase project + migration multi-tenant
+
+- **Tipo:** infra
+- **Depende de:** T1 (paralelo a T2-T7)
+- **Estimativa:** 1h
+- **Critério de done:**
+  - [ ] 1 Supabase project criado em **region São Paulo** (Free tier)
+  - [ ] Auth providers ativados: Magic Link (email OTP) + Google OAuth
+  - [ ] Estrutura `supabase/` na raiz monorepo: `migrations/`, `seed.sql` (vazio), `config.toml`
+  - [ ] Migration `supabase/migrations/0001_init_multi_tenant.sql` aplicada com:
+    - tabela `dojos` (id uuid PK, nome text, slug text unique, created_at)
+    - tabela `profiles` (id uuid PK = auth.users.id, dojo_id uuid FK, role text check, full_name)
+    - RLS habilitado em ambas
+    - policy `tenant_isolation` em `profiles` (user só vê próprio profile + colegas mesmo dojo)
+    - policy `dojos_select_own` (user só vê seu dojo)
+  - [ ] `.env.local` na raiz do monorepo com `SUPABASE_URL` + `SUPABASE_ANON_KEY` (NÃO commitado — verificar `git ls-files .env.local` vazio)
+  - [ ] Teste manual Magic Link: enviar pra `scholzecr@gmail.com`, email chega em <60s
+  - [ ] **Aprovação humana explícita do Davi antes de aplicar a migration** (regra `.claude/rules/sql-migrations.md`)
+- **Commit alvo:** `feat(supabase): schema inicial multi-tenant + RLS policies`
+- **Notas:** Davi cria o project no dashboard (precisa login Supabase). Eu gero o SQL + .env.example. Davi roda `supabase db push` quando confirmar.
+
+### T9 — Setup i18n (i18next pt-BR + en com strings placeholder)
+
+- **Tipo:** feature
+- **Depende de:** T6, T7
+- **Estimativa:** 30min
+- **Critério de done:**
+  - [ ] `i18next` + `react-i18next` instalados em ambos apps
+  - [ ] `locales/pt-BR.json` + `locales/en.json` em cada app com 3 strings: `welcome_sensei`, `org_name`, `slogan`
+  - [ ] Default locale: `pt-BR`
+  - [ ] Switch idioma funcional (botão dummy no header de ambos apps)
+  - [ ] Build typecheck ambos apps verde após integração
+- **Commit alvo:** `feat(i18n): setup i18next pt-BR + en com 3 strings placeholder`
+
+### T10 — CI GitHub Actions + Vercel deploy preview
+
+- **Tipo:** infra
+- **Depende de:** T6, T7
+- **Estimativa:** 1h
+- **Critério de done:**
+  - [ ] `.github/workflows/ci.yml` com matrix `[apps/site, apps/app]` rodando `npm ci` + `npm run typecheck` + `npm run build` + `npm run lint`
+  - [ ] CI dispara em pull_request pra `master`
+  - [ ] 2 projetos Vercel conectados ao repo `Davi-Scholze/dojo-familia-scholze`:
+    - `dojofs-site` (root: `apps/site`, framework: Next.js)
+    - `dojofs-app` (root: `apps/app`, framework: Vite)
+  - [ ] Preview deploy automático por PR ativado em ambos
+  - [ ] 1 PR de teste aberto → CI verde → 2 URLs Vercel preview retornam 200 OK + renderizam logo
+- **Commit alvo:** `ci(github-actions): build + typecheck matrix em PR + Vercel preview deploy`
+- **Notas:** Davi precisa conectar repo manualmente no dashboard Vercel (login + import). Eu gero o `vercel.json` se aplicável + workflow yml.
+
+### T11 — Sincronizar CLAUDE.md + README.md + ARQUITETURA-MESTRE seção 11
+
+- **Tipo:** docs
+- **Depende de:** T10
+- **Estimativa:** 30min
+- **Critério de done:**
+  - [ ] `Repositorios/dojo-familia-scholze/CLAUDE.md` reescrito refletindo stack PWA (não mais RN+Expo). `grep "React Native" CLAUDE.md` retorna vazio. Ordem de leitura atualizada apontando pra ARQUITETURA-MESTRE.
+  - [ ] `Repositorios/dojo-familia-scholze/README.md` criado/atualizado com: o que é o projeto, como rodar dev local em <5min (`npm install && npm run dev --workspace=apps/app`), link pra CLAUDE.md + ARQUITETURA-MESTRE, status DRAFT
+  - [ ] `contextos/mapeamento/ARQUITETURA-MESTRE.md` seção 11 linhas 501-504: marcas `⏳` viram `✅` para "Documento mestre", "5 itens críticos decididos", "Supabase project + .env.local", "Scaffold monorepo"
+- **Commit alvo:** `docs(dojo): sincroniza CLAUDE + README + ARQUITETURA-MESTRE pós Fase 0`
+
+### T12 — /complete Fase 0 com Evidence Bloc
+
+- **Tipo:** docs
+- **Depende de:** T11
+- **Estimativa:** 15min
+- **Critério de done:**
+  - [ ] Skill `/complete` rodada sobre esta spec
+  - [ ] Evidence Bloc persistido no final desta spec (`docs/decisoes/2026-05-25_fase-0-setup-dojo-scaffold.md`) contendo: timestamp UTC, comando rodado por critério de aceitação, output literal, critério de sucesso, resultado (PASS/FAIL)
+  - [ ] Status da spec muda `em-andamento` → `implementado`
+  - [ ] Memória persistente `project_dojo.md` atualizada (E14 ✅ implementada + Fase 0 done + próximo Sprint 1)
+  - [ ] PROMPT_MASTER_HANDOFF.md atualizado refletindo Fase 0 done + Sprint 1 começa próxima sessão
+  - [ ] Regra-base 11 (Iron Law honestidade) respeitada — sem claim de "complete" sem Evidence Bloc adjacente
+- **Commit alvo:** `complete(dojo): Evidence Bloc Fase 0 setup monorepo scaffold`
+
+---
+
 ## Próximo passo
 
-→ `/break` decomporá esta spec em tasks atômicas (estimativa: 8-12 tasks, cada uma 1 commit ideal, ~6-10h dev solo total nas horas livres do Davi).
+→ `/plan` produzirá plano executável com ordem cronológica + paralelismo aproveitado (T3+T4+T5 paralelos após T2; T8 paralelo a T2-T7; T6+T7 ordem livre após deps) + checkpoints de review antes de cada commit + stop-criteria (qualquer task falhar 2x = ABORT + investigar root cause).
