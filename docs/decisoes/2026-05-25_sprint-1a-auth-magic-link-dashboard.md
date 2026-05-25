@@ -392,6 +392,91 @@ T3 (migration 0002 — aprovação humana) → T4 (seed test profiles) ───
 
 ---
 
+## Plano
+
+> Executor: **IA solo** (Claude Code) + Davi (T3 aprovação SQL DDL, T9 permissão Magic Link, 6 checkpoints aprovação textual). **Multi-agente descartado** — 10 tasks não justificam overhead de coordenação; sequência ordenada com checkpoints é mais previsível pro bootstrap noturno de Davi.
+
+### Sequência (DAG topological + override pra paralelismo banco × código)
+
+```mermaid
+graph LR
+    T1[T1 deps ssr] --> T2[T2 helpers SSR]
+    T2 --> T5[T5 middleware + env]
+    T5 --> T6[T6 /login]
+    T5 --> T7[T7 /auth/callback]
+    T2 --> T8[T8 dashboard]
+    T3[T3 migration 0002 APROVAÇÃO HUMANA] --> T4[T4 seed test profiles]
+    T6 --> T9[T9 Vercel + smoke prod]
+    T7 --> T9
+    T8 --> T9
+    T4 --> T9
+    T9 --> T10[T10 /complete]
+```
+
+### Execução em fases
+
+| Fase | Tasks | Executor | Duração | Checkpoint? |
+|---|---|---|---|---|
+| **F0a — Código setup** | T1 → T2 (sequencial IA) | IA solo | ~55min | _(sem checkpoint — pequeno)_ |
+| **F0b — Banco refactor** | T3 → T4 (sequencial Davi+IA, paralelo a F0a) | Davi (aprova SQL) + IA (aplica via API + seed) | ~75min | ✓ **CP1 após T2+T4**: helpers SSR funcionando + 3 test profiles no banco |
+| **F1 — Middleware + env** | T5 | IA solo | ~60min | ✓ **CP2 após T5**: smoke local `curl /dashboard` sem cookie redireciona pra `/login` |
+| **F2 — Routes + dashboard** | T6 → T7 → T8 (sequencial IA) | IA solo | ~120min | ✓ **CP3 após T8**: build verde + 4 rotas funcionais local |
+| **F3 — Deploy + smoke prod** | T9 | IA (deploy via API) + Davi (testa Magic Link real com permissão) | ~30min | ✓ **CP4 após T9**: 4 rotas prod 200/3xx + 1 test profile logou OK |
+| **F4 — Fechamento** | T10 (`/complete`) | IA + Davi (revisa Evidence Bloc) | ~30min | ✓ **CP5 após T10**: Evidence Bloc completo + memória + handoff |
+
+**Total estimado:** ~5h40 sequencial puro. Com **paralelismo F0a + F0b** (T1+T2 enquanto Davi revisa SQL do T3): **~4h50**. Cabe em **1 sessão noturna** Davi (~5h) ou **2 mais curtas** (~3h cada).
+
+### Checkpoints (pausa visual obrigatória — regra inegociável #2 CLAUDE.md raiz)
+
+| # | Após | O que reportar pro Davi | OK destrava? |
+|---|---|---|---|
+| CP1 | F0a + F0b (T2+T4) | `tree packages/supabase/src` + output `validate-migration.mjs` 10/10 PASS + `SELECT role,full_name FROM profiles` 3 rows | F1 (T5) |
+| CP2 | T5 | `curl -I http://localhost:3000/dashboard` retorna 3xx Location `/login*` + `npm run typecheck` verde | F2 (T6) |
+| CP3 | T8 | build apps/site exit 0 + 5 rotas listadas (`/`, `/login`, `/auth/callback`, `/dashboard`, `/manifest.webmanifest`) + screenshot `/dashboard` com dummy session local OU descrição renderização esperada | F3 (T9) |
+| CP4 | T9 | URLs prod 200/3xx + CI verde + Davi testou 1 test profile real | F4 (T10) |
+| CP5 | T10 | Evidence Bloc inteiro + memórias atualizadas + handoff sincronizado | Sprint 1a fechada |
+
+### Stop-criteria (4 condições de abort)
+
+1. **Task falha 2x consecutivas com mesma causa raiz** → ABORTAR + diagnose root cause + replanejar (novo `/spec` ou `/break` se preciso). NÃO retry cego.
+2. **Davi não aprova SQL DDL do T3** (qualquer dúvida sobre o refactor `profiles.id`) → PAUSAR + revisar SQL + apresentar variantes + esperar OK. NÃO aplicar sem aprovação textual (regra `.claude/rules/sql-migrations.md`).
+3. **Lighthouse PWA regrede pra <70** após T8 (apesar do warning `<img>` esperado, score não pode despencar) → ABORTAR T8, investigar root cause, voltar pra `/spec` se necessário.
+4. **Davi disser "stop" / "pausa" / "espera"** → pausa imediata, reporta estado exato, aguarda direção. Override automático.
+
+### Risco residual mapeado da spec (§ Riscos + mitigações)
+
+| Risco da spec | Task que mitiga | Como verifica |
+|---|---|---|
+| `@supabase/ssr` Next.js 15 + React 19 incompat | T1 (`npm install` falha cedo se peer dep não bate) | typecheck T1/T2 verde |
+| Cookies session não persistem middleware+Server Component | T2 (pattern oficial Supabase) + T5 (matcher correto) | Smoke local CP2 + smoke prod CP4 |
+| Magic Link redirect URL não bate prod vs dev | T5 (env var `NEXT_PUBLIC_SITE_URL`) + T9 (Vercel API seta var prod) | Magic Link teste em T9 |
+| Refactor `profiles.id` quebra view/policy esquecida | T3 (DDL com aprovação humana + rollback adjacente + validate-migration estendido) | 10/10 PASS pós T3 |
+| Seed test profiles falha (signup disabled etc) | T4 (Auth Admin API bypassa frontend signup flow) | `SELECT count(*) FROM profiles` = 3 |
+| Test profile loga em produção real (sem prod/dev split) | T4 (sufixo `@test.local` claramente identificável + doc tech debt) | Tech debt registrada em PENDENCIAS |
+| Middleware infinite redirect loop login↔callback | T5 (matcher allowlist explícita de paths públicos) | CP2 smoke test sem loop |
+| Davi sem `NEXT_PUBLIC_SITE_URL` no Vercel | T9 (IA seta via Management API antes de testar) | Vercel API confirma var em production target |
+
+### Quem faz o quê (humano × IA explícito)
+
+**Davi (manuais não-delegáveis):**
+- **T3 parte 2:** aprovar SQL DDL **textualmente** antes de eu rodar `POST /v1/projects/{ref}/database/query` (sem isso eu pauso, regra `.claude/rules/sql-migrations.md`)
+- **T9 parte 4:** dar permissão **textual** pra eu disparar 1 Magic Link teste pra você OU pra você colar o token dev no browser (memória `feedback_pedir_permissao_acoes_externas` ⭐ ativa)
+- **5 checkpoints CP1-CP5:** aprovação textual antes de eu prosseguir pra próxima fase
+
+**IA solo (Claude Code):**
+- T1 (deps + install) inteiramente
+- T2 (helpers SSR + exports + typecheck) inteiramente
+- T3 parte 1 (gerar SQL + rollback + apresentar 4 dados) + parte 3 (aplicar via API após OK Davi) + parte 4 (validar via script estendido)
+- T4 (seed via Auth Admin API + verify counts) inteiramente
+- T5 (middleware + env vars + smoke local) inteiramente
+- T6 (`/login` page + Server Action signInWithOtp + build) inteiramente
+- T7 (`/auth/callback` route handler) inteiramente
+- T8 (dashboard Server Component + UserBadge + signOut) inteiramente
+- T9 partes 1-3 (set env var Vercel via API + push + wait deploy + smoke test curl)
+- T10 (`/complete` + Evidence Bloc draft + atualizar memória + handoff) inteiramente
+
+---
+
 ## Próximo passo
 
-→ `/plan` produzirá plano executável com ordem cronológica respeitando DAG + paralelismo aproveitado (T3+T4 banco paralelo a T1+T2 código) + checkpoints + stop-criteria. Estimativa: **~6h15** distribuída em 1-2 sessões noturnas.
+→ `/execute` rodará Sprint 1a conforme este plano, parando em cada CP1-CP5 pra pausa visual + OK explícito. Estimativa: ~5h sequencial OU ~4h50 com paralelismo F0a + F0b.
