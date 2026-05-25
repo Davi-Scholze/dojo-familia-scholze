@@ -32,6 +32,27 @@ const checks = [
     sql: "SELECT indexname FROM pg_indexes WHERE schemaname='public' AND indexname='idx_profiles_dojo_id'",
     expect: (rows) => rows.length === 1,
   },
+  // ============ NOVOS CHECKS pós-migration 0002 ============
+  {
+    label: "SINGLETON dojo (Sprint 1a)",
+    sql: "SELECT count(*)::int as count FROM public.dojos WHERE slug='dojo-familia-scholze'",
+    expect: (rows) => rows.length === 1 && rows[0].count === 1,
+  },
+  {
+    label: "COLUMN profiles.owner_user_id (NOT NULL, FK auth.users CASCADE)",
+    sql: "SELECT column_name, is_nullable, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='owner_user_id'",
+    expect: (rows) => rows.length === 1 && rows[0].is_nullable === "NO" && rows[0].data_type === "uuid",
+  },
+  {
+    label: "FK profiles_owner_user_id_fkey ON DELETE CASCADE",
+    sql: "SELECT confdeltype FROM pg_constraint WHERE conname='profiles_owner_user_id_fkey'",
+    expect: (rows) => rows.length === 1 && rows[0].confdeltype === "c",
+  },
+  {
+    label: "INDEX idx_profiles_owner_user_id",
+    sql: "SELECT indexname FROM pg_indexes WHERE schemaname='public' AND indexname='idx_profiles_owner_user_id'",
+    expect: (rows) => rows.length === 1,
+  },
 ];
 
 let pass = 0, fail = 0;
