@@ -1,0 +1,233 @@
+---
+tipo: spec
+data: 2026-05-25
+status: aberto
+escopo: dojo-familia-scholze — Sprint 1a (parte 1/3 da Sprint 1)
+nivel_operacional: L1
+related:
+  - ./2026-05-25_fase-0-setup-dojo-scaffold.md (fundação técnica — Fase 0 completa)
+  - ../../contextos/mapeamento/ARQUITETURA-MESTRE.md v1.1
+  - ../../contextos/mapeamento/perspectiva-professor.md (campos profile professor)
+  - ../../contextos/decisoes-mvp-2026-05-21.md (bootstrap-mode, i18n)
+  - ../../../../KODAI/docs/STRATEGIC-NORTH.md v1.4 (regra-ouro L1 antes L3)
+lineage:
+  origin: downstream-sprint
+  derived_from:
+    - source: "ARQUITETURA-MESTRE.md §4.1 (features 1-3 MUST HAVE Sprint 1)"
+      type: design-doc
+    - source: "Davi 2026-05-25 tarde — 3 esclarecimentos pré-spec: (1) Davi sempre é testador, perfis fake; (2) convite via Supabase Auth nativo + metadata role; (3) 3 roles admin/professor/aluno, responsável é RELAÇÃO administra profile menor não role"
+      type: feedback-stakeholder
+  validado_por: ["Davi 2026-05-25 (via decisões textuais 3 pontos)"]
+---
+
+# Spec — Sprint 1a: Auth Magic Link + Dashboard + Seed Test Profiles
+
+## Problema
+
+Fase 0 entregou fundação técnica completa (single-app Next.js + Supabase + RLS multi-tenant + i18n PT/EN + PWA + Vercel CI/CD), mas a rota `/dashboard` é **placeholder público sem auth**. Hoje qualquer pessoa acessa `https://dojofs-davi-scholzes-projects.vercel.app/dashboard` e vê a tela "Bem-vindo Sensei". Sem auth, nenhum trabalho de Sprint 1+ (cadastro de profissionais, alunos, turmas, presença, mensalidades) pode existir — todas dependem de "quem é o user logado" pra aplicar policies RLS corretamente.
+
+**Evidência concreta:**
+- `curl https://dojofs-davi-scholzes-projects.vercel.app/dashboard` → HTTP 200 sem auth
+- Schema atual `profiles.id` é FK 1:1 com `auth.users(id)` — bloqueia o fluxo Sprint 4 onde **responsável adulto administra profile de menor** (`responsável` NÃO é role, é RELAÇÃO conforme decisão Davi 2026-05-25)
+- Davi declarou que ele NUNCA é admin real do dojo do pai — usa perfis fake de teste. Atualmente impossível: não existe seed nem mecanismo de criar test profiles facilmente
+
+**Dor real:** sem auth + sem schema refactor + sem test profiles, próximas 3-4 sub-sprints (1b/1c/Sprint 2) precisam parar a cada feature pra "improvisar login", "fingir que tem user", "ALTER TABLE em produção", multiplicando dor.
+
+## Hipótese central
+
+**Se** implementarmos:
+1. Migration 0002 com seed singleton dojo + refactor `profiles.id` → `profiles.owner_user_id` (FK CASCADE)
+2. Page `/login` com Magic Link via Supabase Auth (`signInWithOtp`)
+3. Route Handler `/auth/callback` que processa redirect Supabase
+4. Middleware Next.js fazendo gating `/dashboard` ↔ `/login`
+5. Script `seed-test-profiles.mjs` criando 3 test profiles (admin/professor1/professor2) via Auth Admin API
+6. Atualização do `/dashboard` pra mostrar `full_name` + role do user logado + botão "Sair"
+
+**Então:**
+1. Davi consegue testar fluxos como `admin@test.local` OU `professor1@test.local` OU `professor2@test.local` sem virar admin real
+2. Sprint 1b (convite professor real via Server Action + form cadastro detalhado) começa com schema final pronto, sem refactor doloroso
+3. Sprint 4 (responsável-administra-menor com LGPD) reusa o mesmo schema sem migração quebrando produção
+4. Rota `/dashboard` deixa de ser acessível sem session — fundação canônica L1 instalada
+
+**Verificável por:** em `https://dojofs-davi-scholzes-projects.vercel.app/dashboard` (após deploy desta Sprint 1a), acesso sem cookies → redireciona `/login`. Login com `admin@test.local` → vejo "Bem-vindo, <full_name>" + badge "admin". Logout limpa cookies e redireciona `/login`. Davi alterna entre os 3 test profiles e cada um vê seu próprio dashboard com sua role.
+
+## Escopo
+
+### Dentro
+
+**1. Migration 0002 (`supabase/migrations/0002_owner_user_id_refactor.sql` + rollback adjacente):**
+- Singleton seed: `INSERT INTO public.dojos (nome, slug) VALUES ('Dojô Família Scholze', 'dojo-familia-scholze')` (idempotente via `ON CONFLICT DO NOTHING` no `slug`)
+- Drop constraint atual `profiles_id_fkey` (FK direta `profiles.id → auth.users.id`)
+- Alter `profiles.id` pra ser UUID standalone com `DEFAULT gen_random_uuid()`
+- Add column `profiles.owner_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE`
+- Add index `idx_profiles_owner_user_id`
+- Atualizar function `current_user_dojo_id()` pra usar `WHERE owner_user_id = auth.uid()`
+- Atualizar 3 policies em `profiles`:
+  - `profiles_select_same_dojo` → `USING (owner_user_id = auth.uid() OR dojo_id = current_user_dojo_id())`
+  - `profiles_insert_self` → `WITH CHECK (owner_user_id = auth.uid())`
+  - `profiles_update_self` → `USING (owner_user_id = auth.uid()) WITH CHECK (owner_user_id = auth.uid())`
+- Policies em `dojos` permanecem (não tocam `profiles`)
+- Validação pós-migration via `scripts/validate-migration.mjs` (extender o checklist existente)
+
+**2. Auth flow (`apps/site/`):**
+- `app/login/page.tsx` (Client Component): form com input email + button "Receber link mágico", states (idle/sending/sent/error), i18n via `useTranslation()`
+- `app/login/actions.ts` (Server Action): wrapper sobre `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: <SITE_URL>/auth/callback } })`
+- `app/auth/callback/route.ts` (Route Handler GET): captura `code` query param + `searchParams.get('next')` (default `/dashboard`), chama `supabase.auth.exchangeCodeForSession(code)`, faz redirect com cookies de session setados
+- `middleware.ts` (na raiz `apps/site/`): usando `@supabase/ssr` createServerClient com cookies handlers:
+  - Refresh session em cada request
+  - Redirect `/dashboard/*` → `/login?next=<original-path>` se sem session
+  - Redirect `/login` → `/dashboard` se já autenticado
+  - Public paths não tocadas: `/`, `/auth/callback`, `/manifest.webmanifest`, `/sw.js`, `/_next/*`
+
+**3. Dashboard (atualização de placeholder existente):**
+- `app/dashboard/layout.tsx`: agora Server Component que via `createServerClient` carrega user + profile do banco. Passa via context pro children (props ou contexto React)
+- `app/dashboard/page.tsx`: substitui "Bem-vindo, Sensei" estático por dinâmico (`Bem-vindo, ${profile.full_name}` + badge role)
+- Novo component `apps/site/components/UserBadge.tsx`: mostra nome + role + logout button no header dashboard
+- `app/dashboard/actions.ts`: Server Action `signOut()` que chama `supabase.auth.signOut()` + `revalidatePath('/')`
+
+**4. `packages/supabase/` (helpers SSR):**
+- `src/server.ts`: factory `createServerClient(cookies)` pra Server Components / Route Handlers / Server Actions
+- `src/middleware.ts`: helper `updateSession(request)` pra middleware Next.js
+- `src/index.ts`: exportar tudo
+- Adicionar dep `@supabase/ssr ^0.5.x`
+
+**5. Script `scripts/seed-test-profiles.mjs`:**
+- Via Supabase Management API + Auth Admin API com `SUPABASE_ACCESS_TOKEN`:
+- Cria 3 users em `auth.users`:
+  - `admin@test.local` (role `admin`) — full_name "Admin Teste"
+  - `professor1@test.local` (role `professor`) — full_name "Professor Um (Teste)"
+  - `professor2@test.local` (role `professor`) — full_name "Professor Dois (Teste)"
+- Pra cada user: cria row em `profiles` com `owner_user_id = user.id`, `dojo_id` = singleton dojo, role + full_name
+- Output: lista com email + Magic Link **pré-validado** (URL `?code=<token>` que faz auto-login em dev/preview) — Davi cola no browser pra testar cada role
+- Idempotente: se user já existe, skipa
+
+**6. Env vars / config:**
+- `.env.local` adiciona `NEXT_PUBLIC_SITE_URL=https://dojofs-davi-scholzes-projects.vercel.app` (pra Magic Link redirectTo funcionar em prod E dev — em dev, override pra `http://localhost:3000`)
+- Vercel project: setar `NEXT_PUBLIC_SITE_URL` como env var production
+- Supabase dashboard: confirmar `Site URL` aponta pra https://dojofs-davi-scholzes-projects.vercel.app + `Additional Redirect URLs` inclui `http://localhost:3000/auth/callback` + `https://dojofs-davi-scholzes-projects.vercel.app/auth/callback`
+
+**7. Docs sync (final da Sprint 1a):**
+- `CLAUDE.md` dojo: adicionar Sprint 1a no histórico
+- Memória `project_dojo`: capturar decisões Sprint 1a + 3 test profiles + URL canônica `/login`
+- `ARQUITETURA-MESTRE.md` §11: marcar Sprint 1a ✅
+
+### Fora (NÃO entra Sprint 1a)
+
+- **Convite via Server Action** (admin convida professor real via Supabase `auth.admin.inviteUserByEmail` + metadata `role`) → **Sprint 1b**
+- **Tela `/dashboard/equipe`** (lista de professores + form convidar) → **Sprint 1b**
+- **Form cadastro detalhado professor** (faixa, modalidade, anos_experiencia, foto, federação) → **Sprint 1b** (também adiciona colunas em `profiles` via migration 0003)
+- **Tela `/dashboard/alunos`** (CRUD alunos) → **Sprint 1c**
+- **Tela `/dashboard/turmas`** (CRUD turmas) → **Sprint 1c**
+- **Google OAuth** como alternativa ao Magic Link → **Sprint 2+** (precisa Google Cloud Console setup)
+- **Reset de senha / login com senha** → **NUNCA** (Magic Link only é decisão arquitetural)
+- **MFA / 2FA** → **Sprint 4+** (junto com LGPD compliance avançada)
+- **Edge Functions** (cron alertas, certificate PDF, etc) → **Sprint 2+**
+- **Fluxo responsável-administra-menor com LGPD** → **Sprint 4** (mas schema já preparado)
+- **service_role key no Vercel** → **Sprint 1b** (necessária pra `inviteUserByEmail` server-side)
+- **Internacionalização ES + outras línguas** → **Sprint 4+** (decisões-mvp 2026-05-21 sugere PT+EN+ES; Sprint 1a fica PT+EN do que já tá)
+- **Telemetria / analytics** → **Sprint 3+**
+
+## Contratos (handoff)
+
+### Input (handoff_in)
+
+| Item | Estado |
+|---|---|
+| Fase 0 completa (migration 0001 aplicada, Supabase project `mubcbbrwoeblvqaiebou` ativo) | ✅ Evidence Bloc registrado |
+| Singleton dojo NÃO existe ainda na tabela `dojos` (vazia) | ✅ confirmar via `SELECT count(*) FROM dojos` |
+| `.env.local` raiz com `SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `VERCEL_TOKEN` | ✅ presentes |
+| Vercel project `dojofs` deployando OK (auto-deploy push master) | ✅ HTTP 200 em rota canônica |
+| `@dojo-fs/supabase` package com factory `createDojoSupabase(url, anonKey)` (browser client) | ✅ Fase 0 |
+| CI GitHub Actions verde | ✅ run 26413463584 |
+| Schema atual `profiles.id` é FK auth.users (1:1) | ✅ confirmar via `\d public.profiles` |
+
+### Output (handoff_out)
+
+| Artefato | Forma de verificação |
+|---|---|
+| Migration 0002 aplicada via Management API | scripts/validate-migration.mjs estendido com 4 novos checks (owner_user_id existe + NOT NULL + FK CASCADE; singleton dojo existe; policies usam owner_user_id; index criado) → 10/10 PASS |
+| 3 test profiles criados em `auth.users` + `profiles` | `SELECT email, role, full_name FROM profiles p JOIN auth.users u ON u.id = p.owner_user_id` retorna 3 rows |
+| `/login` renderiza form com i18n | curl GET `/login` retorna HTML com `<form>` + `email` input + button traduzido |
+| `/auth/callback` processa redirect | curl GET `/auth/callback?code=fake-token` retorna 4xx (token inválido) sem crash; com token real, redireciona `/dashboard` |
+| Middleware ativo | curl GET `/dashboard` sem cookies redireciona pra `/login` (3xx); curl GET `/login` com cookies de session válidos redireciona pra `/dashboard` |
+| `/dashboard` mostra `full_name` + role | manual: Davi acessa com test profile, vê nome correto + badge role |
+| Logout funciona | clicar "Sair" → cookies session limpos → redirect `/login` |
+| `npm run build` Vercel verde | HTTP 200 em todas rotas `/`, `/login`, `/auth/callback`, `/dashboard`, `/manifest.webmanifest`, `/sw.js` |
+| CI verde | GitHub Actions run success |
+| Evidence Bloc na spec ao final | Iron Law (regra-base 11) |
+
+### Quality Gates
+
+```yaml
+quality_gates:
+  - "Migration 0002 aplicada via Management API (NÃO no SQL Editor) com aprovação textual humana antes de POST (.claude/rules/sql-migrations.md)"
+  - "Rollback 0002 testado em dry-run antes de aplicar production migration"
+  - "Test profiles APENAS em ambiente Supabase atual (não há prod separado ainda — documentado como tech debt)"
+  - "Magic Link teste só com permissão textual explícita do Davi (memória feedback_pedir_permissao_acoes_externas ⭐)"
+  - "Service_role key NÃO commitada (ainda nem é necessária Sprint 1a — Auth Admin API via PAT Management)"
+  - ".env.local NÃO commitada (git check-ignore .env.local retorna vazio)"
+  - "typecheck verde 4 workspaces"
+  - "build verde Vercel"
+  - "CI GitHub Actions verde"
+  - "Sem regressão Fase 0: validate-migration.mjs continua 6/6 (+ 4 novos) = 10/10"
+  - "Sem warning ESLint novo no build (warning <img> Fase 0 fica pra Sprint 1c quando re-trabalhar /dashboard)"
+  - "Commits atômicos PT-BR (regra-base 7)"
+  - "Push imediato pós-cada commit (extensão Davi)"
+  - "Evidence Bloc final"
+```
+
+## Riscos + mitigações
+
+| Risco | Probabilidade | Impacto | Mitigação |
+|---|---|---|---|
+| `@supabase/ssr` Next.js 15 + React 19 incompatibilidade | M | H | Verificar versão suportada via `npm info @supabase/ssr peerDependencies` antes; pacote em produção desde 2024; se falhar, fallback `@supabase/auth-helpers-nextjs` (deprecated mas estável) |
+| Cookies Supabase session não persistem entre middleware + Server Component | M | H | Usar exatamente o pattern oficial Next.js 15 documentado em supabase.com/docs/guides/auth/server-side/nextjs; helpers em `packages/supabase/src/{server,middleware}.ts` |
+| Magic Link redirect URL não bate em prod vs dev | M | M | `NEXT_PUBLIC_SITE_URL` env var configurada nos 2 ambientes; `supabase/config.toml` `additional_redirect_urls` inclui localhost:3000 + Vercel preview |
+| Refactor `profiles.id` quebra alguma view/policy/FK que esqueci | M | H | Como dojo está sem dados reais (auth.users vazio após cleanup Magic Link), migration tem zero risco de corromper dados. DDL exige aprovação humana (regra) — apresento SQL completo + 4 dados (O QUE, QUANTO, RISCO, REVERSÃO) |
+| Seed test profiles falha por algum check do Supabase (signups disabled, etc) | L | M | Settings do Supabase project já com email enable_signup=true (Fase 0); Auth Admin API bypassa frontend signup flow |
+| Test profile pode logar acidentalmente em produção real (mesmo banco) | M | M | Documentar limitação: até Sprint 1c não há separação prod/dev (1 Supabase Free project). Test profiles têm sufixo `@test.local` claramente identificável. Tech debt: criar Supabase project separado pra prod quando 1º cliente real fechar |
+| Middleware Next.js infinite redirect loop (login → callback → login) | L | H | Allowlist explícita de paths públicos no matcher do middleware; teste manual antes de deploy |
+| Davi sem `NEXT_PUBLIC_SITE_URL` setado em Vercel → Magic Link aponta pra localhost | M | M | Verifico via Vercel API que env var está setada antes de testar prod |
+
+## Alternativas consideradas
+
+| Alternativa | Por quê descartei |
+|---|---|
+| **Email + senha clássico** | Mais código (hashing, reset, brute force protection, validação complexa), pior UX (user esquece senha), bootstrap-mode favorece simplicidade. Magic Link é one-tap e zero estado |
+| **Google OAuth ONLY** | Nem todos profs/alunos têm conta Google (alunos crianças, idosos, ambiente pessoal vs profissional). Magic Link é universal — qualquer email funciona |
+| **Auth0 / Clerk / Supertokens (terceiros pagos)** | Custo (Clerk $25/mo após free tier) + lock-in. Supabase Auth incluso no Free tier, integrado nativamente com RLS Postgres (zero JOIN extra) |
+| **Auth caseiro (JWT manual + bcrypt)** | Time-to-market terrível em bootstrap; risco de segurança alto; reinventa roda. Supabase Auth é battle-tested |
+| **Profile mantém `id = auth.uid()` (sem `owner_user_id`)** | Bloqueia fluxo Sprint 4 responsável-administra-menor (Davi confirmou hoje que responsável NÃO é role separada, é RELAÇÃO administra). Refactor agora (banco vazio) é trivial; refactor depois com dados reais de cliente é caro |
+| **Tabela `convites` separada (não usar Supabase Auth nativo)** | Davi escolheu explicitamente "Supabase Auth nativo + metadata role" como melhor opção (3 perguntas pré-spec) |
+| **Seed via SQL INSERT direto em `auth.users`** | Quebra na prática — `auth.users` é gerenciado pelo GoTrue + triggers, INSERT direto não cria identities. Usar Auth Admin API é o caminho canônico |
+| **Login só funciona em prod (sem ambiente dev)** | Davi desenvolve nas horas livres, precisa testar local antes de cada push. Setup local com env vars de dev é mandatório |
+| **Bootstrap admin: primeiro user vira admin automático via trigger** | Davi explicitamente disse "não, definimos depois" — quem é admin real fica pra decisão informada quando entender modelo de uso do pai |
+
+## Critérios de aceitação
+
+Mensuráveis e verificáveis por comando ou observação:
+
+- [ ] Migration 0002 aplicada via `POST /v1/projects/{ref}/database/query` (Management API), **com aprovação textual humana antes** (regra `.claude/rules/sql-migrations.md`)
+- [ ] `scripts/validate-migration.mjs` retorna **10/10 PASS** (6 existentes Fase 0 + 4 novos: `owner_user_id` existe + NOT NULL + FK CASCADE; singleton dojo `slug='dojo-familia-scholze'` count=1; policies usam `owner_user_id`; index `idx_profiles_owner_user_id` existe)
+- [ ] `SELECT count(*) FROM public.dojos WHERE slug='dojo-familia-scholze'` retorna **1** (singleton)
+- [ ] `SELECT count(*) FROM public.profiles WHERE owner_user_id IS NOT NULL` retorna **3** (test profiles após seed)
+- [ ] `SELECT role, full_name FROM profiles ORDER BY role` retorna 3 rows com roles `admin`, `professor`, `professor` e full_names `Admin Teste`, `Professor Um (Teste)`, `Professor Dois (Teste)`
+- [ ] `npm run typecheck` exit 0 nos 4 workspaces
+- [ ] `npm run build --workspace=apps/site` exit 0 + nova rota `/login` listada na tabela de routes
+- [ ] `scripts/seed-test-profiles.mjs` executa idempotente (rodar 2x sem erro, não duplica profiles)
+- [ ] `curl -i https://dojofs-davi-scholzes-projects.vercel.app/dashboard` retorna `3xx Location: /login*` (sem cookies de session)
+- [ ] `curl -i https://dojofs-davi-scholzes-projects.vercel.app/login` (sem cookies) retorna `200 OK` com HTML do form (input email + button)
+- [ ] Davi testa manualmente cada test profile via Magic Link colado, **com permissão prévia textual** pra envio
+- [ ] `/dashboard` mostra "Bem-vindo, Admin Teste" + badge "admin" quando logado como `admin@test.local`
+- [ ] Botão "Sair" no `/dashboard` limpa cookies + redireciona `/login`
+- [ ] Acessar `/login` enquanto logado redireciona pra `/dashboard` (sem loop)
+- [ ] CI GitHub Actions run **success** após último push
+- [ ] Vercel preview deploy verde, URL acessível
+- [ ] `git ls-files .env.local` retorna **vazio** (gitignored)
+- [ ] Memória `project_dojo` atualizada com Sprint 1a + 3 test profiles + URL `/login`
+- [ ] `ARQUITETURA-MESTRE.md` §11 marca Sprint 1a ✅
+- [ ] Evidence Bloc adicionado a esta spec ao final do `/complete`
+
+## Próximo passo
+
+→ `/break` decomporá esta spec em tasks atômicas. Estimativa preliminar: **8-10 tasks**, soma estimada **~4-6h** trabalho focado.
