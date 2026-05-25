@@ -7,21 +7,28 @@
 
 ---
 
-## 0. TL;DR (300 palavras)
+## 0. TL;DR (atualizado 2026-05-25 — posicionamento KOD.AI agência)
 
-**Não é um app.** É um **ecossistema PWA universal** (mobile + desktop, online + offline) que serve **5 personas** (professor, aluno adulto, responsável, aluno menor via responsável, operador plataforma), entrega **57 features mapeadas** em 4 fases, usa **arquitetura monorepo** com 2 apps (site SSR + app PWA autenticado) compartilhando packages (ui, lib, supabase), e funciona como **template pra futuros clientes** (academia X, academia Y → fork rápido → eventualmente multi-tenant único).
+**Dojô Família Scholze NÃO é um SaaS multi-tenant.** É o **case 0 da agência KOD.AI** — primeiro sistema completo IA-first vendido por **Davi (fundador KOD.AI)** pro pai (cliente 0), que valida o framework e serve como **case study público** pra próximos clientes (academias, professores).
 
-**Stack:** React 19 + TypeScript + Tailwind + shadcn/ui + Vite (app) + Next.js 15 (site) + Supabase (backend) + Asaas (pagamentos) + Vercel (deploy) + Service Worker + IndexedDB/Dexie (offline) + getUserMedia + CompreFace self-hosted (face scan) + Evolution API self-hosted (WhatsApp).
+**Modelo de negócio (alinhado STRATEGIC-NORTH v1.4):**
+- KOD.AI = agência IA SMB BR (Davi vende) + framework open-source de mesmo nome (`Davi-Scholze/kod-ai`)
+- Cada cliente = **instância dedicada** (não SaaS compartilhado): repo próprio + domínio próprio + Supabase próprio + branding próprio
+- Customização via `features_habilitadas` jsonb (escolhe das ~57 features catalogadas)
+- Pricing canônico SMB BR: **R$ 8-25k setup + R$ 3-8k/mês L1 + add-ons L2/L3** (DFY/DWY/DIY estilo Liam Ottley/MazyOS/Kelvin Cleto)
+- **Caso 0 (pai)** pode ter precificação especial — validação > receita imediata
 
-**Custo MVP:** R$ 0/mês até primeiro cliente pagante (Free tiers Vercel + Supabase + Asaas).
-**Pricing:** R$ 97 / R$ 197 / R$ 397 (3 tiers BR) + trial 30d sem cartão + plano anual com 2 meses grátis.
-**Break-even:** ~4-5 professores no Básico cobrem infra.
+**Tecnicamente:** ecossistema PWA universal (mobile + desktop, online + offline), 5 personas, 57 features catalogadas em 4 fases, arquitetura monorepo (site SSR + app PWA + packages compartilhados).
 
-**KOD.AI aplicável:** 11 packs (8 prontos, 3 STUB) + 15 skills + contexto-domínio `gestao-academia-esportiva-br` (100% match) + 7 concorrentes já mapeados em `competitive-intelligence`.
+**Stack:** React 19 + TypeScript + Tailwind + shadcn/ui + Vite (app) + Next.js 15 (site) + Supabase + Asaas + Vercel + Service Worker + Dexie + getUserMedia + CompreFace self-hosted + Evolution API self-hosted.
 
-**Roadmap:** MVP (4 fases × ~4 semanas cada) → validação Cristiano 30d → onboarding rede de 10 profs → tráfego pago → internacional → marketplace B2B → multi-tenant SaaS único.
+**Custo MVP:** ~R$ 4/mês (só domínio) — bootstrap radical até 1ª venda (Davi tem zero capital).
 
-**Próximo passo concreto:** decidir 8 itens críticos abertos + scaffold do monorepo + Sprint 1 Dia 1 (login + tela bem-vindo).
+**KOD.AI aplicável:** 11 packs (8 prontos) + 15 skills + contexto-domínio `gestao-academia-esportiva-br` (100% match — dojo já foi absorvido upstream) + 7 concorrentes mapeados.
+
+**Roadmap:** MVP (4 fases × 4 semanas) → validação 30d com pai → **EM PARALELO** outreach 1º cliente externo pagante (academia rede Cristiano) → Q3 2026 deadline (STRATEGIC-NORTH v1.3) → reinveste receita em ferramentas/marketing → próximos clientes.
+
+**Próximo passo concreto:** decidir 5 itens críticos abertos + scaffold do monorepo + Sprint 1 Dia 1 (login + tela bem-vindo).
 
 ---
 
@@ -40,15 +47,40 @@
 | 7 | **Carrosséis Instagram** | Marketing | Pipeline KOD.AI (`/publicar-tema`) | Instagram | n/a | n/a |
 | 8 | **Ads Google/Meta** | Marketing | Plataforma externa (pack `marketing/google-ads-campanhas` futuro) | n/a | n/a | n/a |
 
-### 1.2 Espelho pra futuros clientes
+### 1.2 Cliente 0 = caso de validação | Próximos clientes = vendas da agência KOD.AI
 
-Cada cliente novo = **fork do monorepo** com:
-- `.env` diferente (Supabase project novo)
-- `packages/ui/theme.ts` ajustado (paleta do cliente)
-- `apps/site/content/` ajustado (textos do cliente)
-- Deploy: `cliente-x.com.br` + `app.cliente-x.com.br`
+**Davi é fundador da agência KOD.AI** (não SaaS founder). Vende **sistemas IA-first ponta-a-ponta personalizados** pra academias e professores. Modelo DFY/DWY/DIY estilo Liam Ottley/MazyOS/Kelvin Cleto.
 
-**Evolução:** Fase 1 (instâncias separadas, 1-5 clientes) → Fase 2 (consolidar em multi-tenant SaaS único com `tenant_id` Supabase RLS — arquitetura já preparada desde MVP).
+**Cliente 0 — Dojô Família Scholze:**
+- Pai do Davi (relação familiar)
+- Pricing especial (validação > receita) — pode ser custo + retainer simbólico OU permuta
+- **Importante:** entregar Evidence Bloc real (>30 dias em produção com aluno real) pra promover `gestao-academia-esportiva-br` DRAFT → FUNCIONAL no upstream KOD.AI
+
+**Próximos clientes (Fase 2 paralela):**
+- Cada um = **instância dedicada** (não SaaS multi-tenant compartilhado):
+  - Repo próprio (fork rápido do dojo template)
+  - Supabase project próprio (Free tier inicial, Pro quando faturar)
+  - Domínio próprio (do cliente, não da agência)
+  - Branding próprio (paleta + logo + nome cliente)
+  - Features ativadas via `features_habilitadas` jsonb (escolhe das ~57 catalogadas)
+- **Pricing canônico (STRATEGIC-NORTH v1.4):**
+  - Setup 2-4 semanas: **R$ 8-25k** one-time
+  - Mensalidade L1 (automação tradicional): R$ 3-8k/mês
+  - Add-on L2 (IA assistiva/RAG): +R$ 2-5k/mês
+  - Add-on L3 (agentes autônomos): +R$ 5-15k/mês
+- **Regra de OURO inviolável:** Nunca vender L3 antes de L1 sólido (política `regra-ouro-l1-antes-de-l3.md` no KODAI)
+- **Multi-tenancy "segredo da margem >80%":** infraestrutura compartilhada com isolamento lógico (RLS Supabase + subdomínio Next.js + Vault segregado) → 50 clientes na infra de 1 → custo marginal R$ 50-200/cliente
+
+**Loop central de evolução:**
+```
+clientes reais → validam contextos → refinam padrões →
+melhoram sistemas → alimentam o KODAI core →
+melhoram framework → próximos clientes mais rápidos/baratos
+```
+
+Cada feature validada num cliente vira pack/contexto/skill universal upstream via `/upstream-update` (anti-pollution 7 SIM).
+
+**Fase futura (decisão informada quando houver 5-10 clientes):** consolidar instâncias em multi-tenant SaaS único OU manter dedicadas. Não decidir agora.
 
 ---
 
@@ -404,18 +436,25 @@ FASE 5 — Multi-tenant SaaS único (Davi decide)
 
 ---
 
-## 7. DECISÕES PENDENTES (8 críticas pra desbloquear Sprint 1)
+## 7. DECISÕES PENDENTES (5 críticas pra desbloquear Sprint 1 — revisado pós-posicionamento KOD.AI)
 
-| # | Decisão | Bloqueia |
-|---|---|---|
-| 1 | Domínio definitivo (`meudojo.app` vs `dojofamiliascholze.com.br` vs outro) | Setup DNS + Vercel + Open Graph |
-| 2 | Nomenclatura "Caderno do Sensei" vs "Diário do Mestre" vs "Caderno do Tatame" | Naming database + UI |
-| 3 | CNPJ pra Asaas (PF Cristiano vs MEI/ME empresa) | Setup Asaas account |
-| 4 | Cristiano: perfil admin compartilhado ou role separada | Schema auth |
-| 5 | Apple Dev account quem registra (Cristiano PF $99/ano OU pular App Store pelo PWA) | Decidido se PWA: pular |
-| 6 | Logo final + tagline confirmados (já tem assets oficiais — só validar versão final) | Identidade visual |
-| 7 | Plano de start de cobrança (após Sprint 4 OK?) | Pricing date público |
-| 8 | Nome empresa SaaS (Showzy vs alternativa) | Marca + razão social NFs |
+| # | Decisão | Bloqueia | Sugestão minha |
+|---|---|---|---|
+| 1 | Domínio do **Dojô Família Scholze** (case 0 do pai) — `dojofamiliascholze.com.br`? `familiascholze.com.br`? subdominio sob agência? | DNS + Open Graph + tagline | `dojofamiliascholze.com.br` (R$ 40/ano, BR formal) |
+| 2 | Domínio da **agência KOD.AI** — `kodai.com.br` (R$ 40/ano bootstrap) OU `kod.ai` (US$ 200/ano premium) | Posicionamento agência (site/portfólio) | `kodai.com.br` agora → migrar `kod.ai` quando faturar |
+| 3 | CNPJ pra Asaas (case 0 do pai) — pai PF? Davi MEI (rápido + gratuito)? PF Cristiano? | Setup Asaas + emissão NF | **Davi abre MEI KOD.AI agora** (1 dia online + gratuito) — permite emitir NF + Asaas com CNPJ + valida posicionamento agência |
+| 4 | Nomenclatura "Caderno do Sensei" vs "Diário do Mestre" vs "Caderno do Tatame" | Naming database + UI | "Caderno do Sensei" (já consolidado nos docs) |
+| 5 | Plano de start de cobrança (pai como case 0 — quando começa?) | Pricing date | **Pai pode pagar valor simbólico** (ex: R$ 200/mês cobrindo custo infra) — case study importa mais que receita |
+
+**Itens removidos da lista (não bloqueiam mais):**
+- ~~Apple Dev account~~ — pular (PWA não precisa)
+- ~~Logo final~~ — usar oficial do pai já capturado em `_negocio/identidade/oficial/`
+- ~~Nome empresa SaaS~~ — **resolvido: KOD.AI** (agência + framework mesmo nome)
+- ~~Cristiano perfil admin~~ — Cristiano é prospect cliente Fase 2, não admin plataforma
+
+**Davi vs Cristiano clarificação importante:**
+- **Davi** = fundador KOD.AI (agência + framework). Vende, entrega, mantém.
+- **Cristiano** = primeiro **prospect cliente externo** (rede de academias artes marciais). Compra sistema pra academia dele. NÃO é admin/co-founder KOD.AI.
 
 ---
 
