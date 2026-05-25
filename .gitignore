@@ -15,14 +15,26 @@ build/
 .vite/
 out/
 
-# === Env vars (NUNCA commitar) ===
+# === Env vars + secrets (NUNCA commitar) ===
 .env
 .env.local
 .env.*.local
 .env.development
 .env.production
+.env.staging
 !.env.example
 !.env.local.example
+
+# Outros formatos de credenciais que podem aparecer
+*.pem
+*.key
+!**/public.key
+credentials.json
+service-account*.json
+*-key.json
+secrets/
+.secrets/
+*.secrets.*
 
 # === Vercel ===
 .vercel/

@@ -30,8 +30,14 @@ export async function runQuery(sql) {
   return { status: r.status, data };
 }
 
-// CLI mode
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}`) {
+// CLI mode — robusto contra paths Windows (URL-encoded spaces, backslashes)
+const isCli =
+  process.argv[1] &&
+  import.meta.url.replace(/%20/g, " ").replace(/\\/g, "/").endsWith(
+    process.argv[1].replace(/\\/g, "/")
+  );
+
+if (isCli) {
   const sql = process.argv[2];
   if (!sql) {
     console.error("Usage: node scripts/db-query.mjs '<SQL>'");
