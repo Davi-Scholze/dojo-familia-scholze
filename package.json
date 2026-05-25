@@ -1,0 +1,29 @@
+{
+  "name": "dojo-familia-scholze",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sistema do Dojô Família Scholze — case 0 da agência KOD.AI. PWA universal (mobile + desktop) + landing SSR.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "npm@11.11.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev:site": "npm run dev --workspace=apps/site",
+    "dev:app": "npm run dev --workspace=apps/app",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Davi-Scholze/dojo-familia-scholze.git"
+  },
+  "license": "UNLICENSED",
+  "author": "Davi Pereira Scholze <scholzecr@gmail.com>"
+}
