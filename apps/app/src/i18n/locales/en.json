@@ -1,0 +1,19 @@
+{
+  "common": {
+    "welcome_sensei": "Welcome, Sensei",
+    "org_name": "Dojô Família Scholze",
+    "slogan": "YIELD TO WIN",
+    "modalidades": "Judo · Jiu-Jitsu",
+    "locale": "Curitiba/PR"
+  },
+  "auth": {
+    "signin": "Sign in",
+    "register_dojo": "Register dojo",
+    "sprint1_disabled": "Available in Sprint 1"
+  },
+  "navigation": {
+    "back_home": "Back to home",
+    "not_found_title": "Page not found",
+    "not_found_subtitle": "This page was not found."
+  }
+}

@@ -1,17 +1,22 @@
+import { useTranslation } from "react-i18next";
 import {
   ORG_NAME,
-  SLOGAN,
   KANJI,
-  MODALIDADES,
-  LOCALIDADE,
   SENSEI,
   Button,
 } from "@dojo-fs/ui";
+import { LanguageSwitch } from "../components/LanguageSwitch";
 
 export function HomePage() {
+  const { t } = useTranslation();
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <section className="flex w-full max-w-2xl flex-col items-center gap-8 text-center">
+        <div className="absolute right-4 top-4">
+          <LanguageSwitch />
+        </div>
+
         <img
           src="/logo-retangular-preto.png"
           alt={`Logo oficial ${ORG_NAME}`}
@@ -22,7 +27,7 @@ export function HomePage() {
 
         <div className="space-y-2">
           <h1 className="font-display text-3xl font-bold tracking-wider text-dojo-red sm:text-4xl">
-            Bem-vindo, Sensei
+            {t("common.welcome_sensei")}
           </h1>
           <p className="text-base text-muted-foreground">
             <span className="font-display text-xl">{KANJI.judo}</span>
@@ -32,22 +37,22 @@ export function HomePage() {
         </div>
 
         <div className="space-y-1">
-          <p className="text-lg font-semibold">{ORG_NAME}</p>
+          <p className="text-lg font-semibold">{t("common.org_name")}</p>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
-            {MODALIDADES.join(" · ")} — {LOCALIDADE}
+            {t("common.modalidades")} — {t("common.locale")}
           </p>
         </div>
 
         <p className="font-display text-2xl font-bold tracking-widest text-dojo-red">
-          {SLOGAN}
+          {t("common.slogan")}
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Button variant="default" size="lg" disabled>
-            Entrar (Sprint 1)
+            {t("auth.signin")} ({t("auth.sprint1_disabled")})
           </Button>
           <Button variant="outline" size="lg" disabled>
-            Cadastrar dojô (Sprint 1)
+            {t("auth.register_dojo")} ({t("auth.sprint1_disabled")})
           </Button>
         </div>
 

@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "@dojo-fs/ui/globals.css";
+import "./i18n";
 import { App } from "./App";
 import { HomePage } from "./routes/index";
 import { NotFoundPage } from "./routes/404";

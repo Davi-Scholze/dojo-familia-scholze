@@ -1,0 +1,19 @@
+{
+  "common": {
+    "welcome_sensei": "Bem-vindo, Sensei",
+    "org_name": "Dojô Família Scholze",
+    "slogan": "CEDER PARA VENCER",
+    "modalidades": "Judô · Jiu-Jitsu",
+    "locale": "Curitiba/PR"
+  },
+  "auth": {
+    "signin": "Entrar",
+    "register_dojo": "Cadastrar dojô",
+    "sprint1_disabled": "Disponível na Sprint 1"
+  },
+  "navigation": {
+    "back_home": "Voltar ao início",
+    "not_found_title": "Página não encontrada",
+    "not_found_subtitle": "Esta página não foi encontrada."
+  }
+}
