@@ -83,6 +83,7 @@ async function createUser({ email, password, full_name }) {
 }
 
 async function generateMagicLink({ email }) {
+  // Supabase Auth Admin API: redirect_to é TOP-LEVEL no body (não dentro de options)
   const r = await fetch(`${URL}/auth/v1/admin/generate_link`, {
     method: "POST",
     headers: {
@@ -93,7 +94,7 @@ async function generateMagicLink({ email }) {
     body: JSON.stringify({
       type: "magiclink",
       email,
-      options: { redirect_to: REDIRECT_TO },
+      redirect_to: REDIRECT_TO,
     }),
   });
   if (!r.ok) {
