@@ -2,8 +2,42 @@
 
 > **Documento mestre canônico do projeto.** Substitui `mvp-escopo.md` + `arquitetura-tecnica.md` (que ficam como histórico).
 > Criado: 2026-05-25 sessão pós-faxina + agentes-ia + Liam.
-> Status: **DRAFT v1.0** — aprovado conceitualmente pelo Davi, sujeito a refinamento em /spec individuais.
+> Atualizado: **2026-05-25 (DRAFT v1.1)** — Fase 0 concluída + reversão arquitetural single-app.
+> Status: **DRAFT v1.1** — fundação técnica implantada (T1-T10 spec `docs/decisoes/2026-05-25_fase-0-setup-dojo-scaffold.md`).
 > Fontes: 5 perspectivas + 5 brutos + 3 concorrentes upstream + contexto-domínio `gestao-academia-esportiva-br` + packs/skills KOD.AI aplicáveis.
+
+---
+
+## ⚠️ Atualizações pós-implementação Fase 0 (2026-05-25 tarde)
+
+### Reversão arquitetural: SINGLE-APP em vez de multi-app
+
+**Decisão original (v1.0):** 2 apps separados — `apps/site` (Next.js SSR) + `apps/app` (Vite PWA).
+
+**Decisão revertida (v1.1):** **1 app único Next.js 15** cobrindo público (SSR/SEO) + autenticado (CSR/PWA) no mesmo deploy.
+
+**Razão da reversão (verbatim Davi 2026-05-25):**
+> "Olha na verdade acho que ter dois links é a maior burra e desorganização... acho que n faz sentido e é cansativo."
+
+**Análise:** decisão original foi otimização prematura. Para MVP 1 dojô + 1 dev + bootstrap radical, separar gera:
+- Fragmentação de UX (2 URLs confundem cliente final)
+- Branding multiplicado (logo em 2 lugares, risco divergência)
+- Sessão Auth quebra entre apps
+- Multi-deploy multiplica overhead linear (50 clientes = 100 projects Vercel)
+- Domínio futuro vira chiclete (`cliente.com.br` + `app.cliente.com.br`)
+
+**Stack consolidada single-app:**
+- **Next.js 15 App Router** — RSC pra rotas `(public)`, "use client" pra rotas autenticadas
+- **`@serwist/next`** — PWA capabilities (SW + manifest + install prompt + offline)
+- **i18next + react-i18next** — i18n client-side com persistência localStorage
+- **1 Vercel project** (`dojofs`)
+- **1 URL canônica:** `https://dojofs-davi-scholzes-projects.vercel.app`
+
+**Memória crítica salva:** `feedback_default_single_app_unified` (⭐ no MEMORY.md). Próximos clientes KOD.AI seguem default single-app.
+
+**Dívida no upstream KODAI:** criar pack canônico `2-PACKS/packs/dev/pwa-nextjs-unified-saas/` substituindo DRAFTs antigos `dev/pwa-vite-react` + `dev/pwa-nextjs-ssr` (anotado em PENDENCIAS raiz).
+
+---
 
 ---
 
@@ -499,17 +533,25 @@ FASE 5 — Multi-tenant SaaS único (Davi decide)
 
 ### Imediatos (esta sessão / próxima)
 1. ✅ Documento mestre criado (este arquivo)
-2. ⏳ Davi decide 8 itens da seção 7 (decisões pendentes críticas)
-3. ⏳ Davi cria Supabase project + salva `.env.local` na raiz dojo
-4. ⏳ Scaffold monorepo (Fase 0)
+2. ✅ Davi decidiu 5 itens críticos seção 7 (subset relevante pra Fase 0)
+3. ✅ Supabase project criado + `.env.local` na raiz dojo (DENTRO do repo, gitignored)
+4. ✅ Scaffold monorepo (Fase 0) — single-app Next.js + 3 packages
+5. ✅ Migration 0001_init_multi_tenant aplicada + validada (6/6 PASS)
+6. ✅ CI GitHub Actions verde
+7. ✅ Vercel project `dojofs` deployando: https://dojofs-davi-scholzes-projects.vercel.app
+8. ✅ PWA setup completo (Serwist SW + manifest + 3 icons)
+9. ✅ i18n setup (pt-BR + en, persistência localStorage)
+10. ✅ Identidade visual aplicada (logos pai + paleta dojo + slogan + kanji)
+11. ✅ Refactor single-app unified (apps/site absorveu apps/app)
 
-### Semana 1
-- Sprint 1 inicia
-- Auth básico funcionando (login Magic Link + Google OAuth)
-- Cadastro professor + dojo
-- Cadastro alunos (manual)
-- PWA setup completo
-- Identidade visual aplicada
+### Semana 1 (Sprint 1)
+- Auth Magic Link funcionando (Supabase) — middleware Next.js redireciona não-autenticado
+- Cadastro professor + criação do dojo (form em `/cadastro-dojo`)
+- Cadastro alunos (form em `/dashboard/alunos/novo`)
+- Gestão básica de turmas
+- Atualizar policies RLS pra cobrir tables novas
+
+Spec Sprint 1: a criar em `docs/decisoes/2026-05-XX_sprint-1-auth-cadastro.md`
 
 ### Mês 1-4 (Fase 1)
 - Sprints 2-4 conforme tabela MVP
