@@ -15,5 +15,9 @@
     "back_home": "Back to home",
     "not_found_title": "Page not found",
     "not_found_subtitle": "This page was not found."
+  },
+  "pwa": {
+    "install_prompt": "Install as app?",
+    "install_button": "Install"
   }
 }

@@ -1,10 +1,11 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { Button } from "@dojo-fs/ui";
 
 /**
  * Toggle minimal pra alternar idioma — pt-BR ↔ en.
- * Persistência via localStorage (configurada em src/i18n/index.ts).
- * Sprint 1+ vai virar dropdown com flag se houver +3 locales.
+ * Persistência via localStorage (configurada em lib/i18n/index.ts).
  */
 export function LanguageSwitch() {
   const { i18n } = useTranslation();

@@ -72,11 +72,12 @@ $RECYCLE.BIN/
 supabase/.temp/
 supabase/.branches/
 
-# === PWA generated (Workbox) ===
-apps/app/public/sw.js
-apps/app/public/workbox-*.js
-apps/app/public/registerSW.js
-apps/app/dev-dist/
+# === PWA generated (Workbox / Serwist) ===
+apps/site/public/sw.js
+apps/site/public/sw.js.map
+apps/site/public/workbox-*.js
+apps/site/public/workbox-*.js.map
+apps/site/public/swe-worker-*.js
 
 # === Faxina (KOD.AI) ===
 .faxina-quarentena/

@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import {
   ORG_NAME,
@@ -5,18 +7,19 @@ import {
   SENSEI,
   Button,
 } from "@dojo-fs/ui";
-import { LanguageSwitch } from "../components/LanguageSwitch";
 
-export function HomePage() {
+/**
+ * Dashboard placeholder Fase 0. Sprint 1 substitui por:
+ * - verificação Supabase session (redirect /login se não autenticado)
+ * - dados do dojo + profile do user logado
+ * - links pra alunos, turmas, presença, financeiro
+ */
+export default function DashboardPage() {
   const { t } = useTranslation();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <section className="flex w-full max-w-2xl flex-col items-center gap-8 text-center">
-        <div className="absolute right-4 top-4">
-          <LanguageSwitch />
-        </div>
-
         <img
           src="/logo-retangular-preto.png"
           alt={`Logo oficial ${ORG_NAME}`}
