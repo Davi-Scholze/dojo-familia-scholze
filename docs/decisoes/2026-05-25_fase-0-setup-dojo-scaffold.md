@@ -404,6 +404,104 @@ T1 (preflight)
 
 ---
 
+## Plano
+
+> Plano executável. **Executor:** IA solo (Claude Code) + Davi (manuais T1, T8 dashboard, T10 Vercel connect, aprovações). **Multi-agente descartado** — 12 tasks não justificam overhead de coordenação + risco de race; sequência ordenada com checkpoints visuais é mais previsível pro Davi solo em bootstrap radical.
+
+### Sequência (DAG topological + override pra T8 paralelo)
+
+```mermaid
+graph LR
+    T1[T1 preflight] --> T2[T2 monorepo]
+    T1 --> T8[T8 supabase project]
+    T2 --> T3[T3 ui]
+    T2 --> T4[T4 lib]
+    T2 --> T5[T5 supabase pkg]
+    T3 --> T6[T6 site]
+    T4 --> T6
+    T3 --> T7[T7 app]
+    T4 --> T7
+    T5 --> T7
+    T6 --> T9[T9 i18n]
+    T7 --> T9
+    T6 --> T10[T10 CI+Vercel]
+    T7 --> T10
+    T8 --> T10
+    T10 --> T11[T11 docs]
+    T11 --> T12[T12 complete]
+```
+
+### Execução em fases
+
+| Fase | Tasks | Executor | Duração | Checkpoint após? |
+|---|---|---|---|---|
+| **F0 — Preflight** | T1 | Davi (manual) + IA verificar | 15min | ✓ Reportar versões Node/npm/gh; bloquear se algo abaixo do mínimo |
+| **F1 — Fundação** | T2 | IA solo | 30min | ✓ Confirmar `npm install` exit 0 antes de espalhar |
+| **F2 — Packages** | T3 → T4 → T5 (sequencial IA) | IA solo | 2h (1h + 30min + 30min) | ✓ Após T5: 3 packages buildam isolados |
+| **F2 paralelo** | T8 (Supabase project + migration) | Davi (dashboard) + IA (SQL) — começa em paralelo a F1/F2 | 1h | ✓ **Davi aprova SQL DDL antes de aplicar** (regra `.claude/rules/sql-migrations.md`); teste Magic Link enviado |
+| **F3 — Apps** | T6 → T7 (sequencial IA) | IA solo | 3h30 (1h30 + 2h) | ✓ Após T7: **Lighthouse PWA ≥80** medido + screenshot Davi valida identidade |
+| **F4 — Cross-cutting** | T9 (i18n) | IA solo | 30min | _(sem checkpoint — leve)_ |
+| **F5 — Deploy + CI** | T10 | Davi (Vercel connect manual) + IA (workflow yml) | 1h | ✓ **PR de teste com CI verde + 2 URLs Vercel 200 OK** |
+| **F6 — Sincronia docs** | T11 | IA solo | 30min | _(sem checkpoint — docs)_ |
+| **F7 — Fechamento** | T12 (`/complete`) | IA + Davi (revisar Evidence Bloc) | 15min | ✓ **Evidence Bloc completo + memória + handoff atualizados** |
+
+**Total estimado:** ~9h30min (~10h com buffer 5%). Distribuído em **2 sessões noturnas Davi** (~5h cada) OU **3 sessões mais curtas** (~3h30 cada). T8 pode comprimir tempo se Davi conseguir criar Supabase project em paralelo ao F1+F2.
+
+### Checkpoints (pausa visual obrigatória — regra inegociável #2 CLAUDE.md raiz)
+
+| # | Ponto | O que reportar pro Davi | OK do Davi destrava? |
+|---|---|---|---|
+| CP1 | Pós T1 | Versões reais Node/npm/gh + status repo + workaround env var | T2 |
+| CP2 | Pós T2 | `tree` da estrutura + output `npm install` | T3 |
+| CP3 | Pós T5 | `npm run build` exit 0 em packages/ui+lib+supabase | T6 |
+| CP4 | Pós T7 | Screenshot home apps/app + Lighthouse PWA score literal + paleta visível | T8 (final) OU T9 |
+| CP5 | Pós T8 | SQL DDL completo pra aprovação + após aplicar: prova RLS via `SELECT pg_policies` | (Davi aprova antes de `supabase db push`) |
+| CP6 | Pós T10 | URL do PR + CI status verde + 2 URLs preview Vercel testadas | T11 |
+| CP7 | Pós T12 | Evidence Bloc inteiro + memórias atualizadas + handoff sincronizado | Fase 0 fechada |
+
+### Stop-criteria (4 condições de abort)
+
+1. **Task falha 2x consecutivas com mesma causa raiz** → ABORTAR plano + diagnose root cause + replanejar via novo `/spec` ou `/break`. NÃO retry cego.
+2. **Lighthouse PWA score em T7 build < 70** → ABORTAR F3, investigar manifest/SW antes de prosseguir. PWA ruim na Fase 0 polui Sprint 1.
+3. **Migration T8 quebra teste RLS** (user de dojo A enxerga linha de dojo B) → ROLLBACK migration + criar `0002_fix_rls_<motivo>.sql`. NUNCA mexer em `0001` aplicado.
+4. **Davi disser "stop" / "pausa" / "espera"** → pausa imediata, reporta estado exato, aguarda direção.
+
+### Risco residual mapeado da spec (§ Riscos + mitigações)
+
+| Risco da spec | Task que mitiga | Como verifica |
+|---|---|---|
+| Conflito React 19 / Next 15 / Vite 6 | T2 (`packageManager` pin + `peerDependencies`) | `npm install` exit 0 sem warning de peer |
+| Tailwind config não propaga | T3 (`tailwind.config.shared.ts` exporta base) + T6+T7 (extend local) | Screenshot home dos 2 apps com paleta visível |
+| Hex paleta não bate com logo | T3 (colorpicker no PNG oficial antes de tokens) | Davi valida no preview Vercel (CP4) |
+| Supabase Free insuficiente já no MVP | T8 (apenas documentar trigger Pro — não preempt) | _(monitorar; trigger só vira ação se DB >400MB)_ |
+| Vercel Hobby insuficiente | T10 (apenas documentar trigger Pro) | _(monitorar; trigger antes Sprint 3 Asaas)_ |
+| PWA iOS Safari quirks | T7 (manifest + SW conservadores) + ARQUITETURA-MESTRE §3.4 já documenta fallback | Lighthouse PWA ≥80 mobile (CP4) |
+| Davi trava em naming pacote | T2 (default `@dojo-fs/`) — já decidido | _(sem ação residual)_ |
+| GitHub Action sem secrets | T10 (Fase 0 não precisa secrets — só build/typecheck) | CI verde sem env vars (CP6) |
+| Davi sem Node 20 | T1 (preflight obrigatório) | T1 critério de done (CP1) |
+| Hook KOD.AI bloqueia | T2 (gitignore via `Write` não redirect) + T8 (aprovação humana DDL) | Hook não dispara nas operações planejadas |
+
+### Quem faz o quê (humano × IA explícito)
+
+**Davi (manuais não-delegáveis):**
+- T1: rodar `node -v`, `npm -v`, `gh auth status` no terminal dele
+- T8 parte 1: criar Supabase project no dashboard (login, region São Paulo) + ativar Auth providers
+- T8 parte 3: aprovar SQL DDL antes de IA rodar `supabase db push`
+- T8 parte 4: teste manual Magic Link (clica no link no email)
+- T10 parte 1: conectar repo a 2 projetos Vercel no dashboard
+- Aprovação textual em cada checkpoint CP1-CP7
+
+**IA solo (Claude Code):**
+- T2-T7 inteiramente (scaffold packages + apps)
+- T8 parte 2: gerar SQL migration `0001_init_multi_tenant.sql` + `.env.example`
+- T8 parte 5: teste `SELECT * FROM pg_policies` após Davi aplicar
+- T9 inteiramente (i18next setup)
+- T10 parte 2: workflow yml + `vercel.json`
+- T11 inteiramente (CLAUDE.md + README + ARQUITETURA-MESTRE update)
+- T12 parte 1: skill `/complete` + Evidence Bloc draft
+
+---
+
 ## Próximo passo
 
-→ `/plan` produzirá plano executável com ordem cronológica + paralelismo aproveitado (T3+T4+T5 paralelos após T2; T8 paralelo a T2-T7; T6+T7 ordem livre após deps) + checkpoints de review antes de cada commit + stop-criteria (qualquer task falhar 2x = ABORT + investigar root cause).
+→ `/execute` rodará a Fase 0 conforme este plano, parando em cada checkpoint pra pausa visual + OK explícito do Davi. Estimativa de **1ª sessão executar até CP4** (~5h: F0+F1+F2+F2-paralelo+F3), **2ª sessão concluir** (F4+F5+F6+F7, ~4h30).
