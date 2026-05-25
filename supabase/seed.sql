@@ -1,0 +1,4 @@
+-- Supabase seed — Dojô Família Scholze
+-- Roda após migrations quando `supabase db reset` é executado.
+-- Sprint 1+ vai popular com dados de demonstração (dojo placeholder, professor demo).
+-- Fase 0: vazio.

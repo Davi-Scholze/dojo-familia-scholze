@@ -4,6 +4,8 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Lê .env.local da raiz do monorepo (1 fonte de verdade pra apps/site + apps/app)
+  envDir: "../..",
   plugins: [
     react(),
     VitePWA({

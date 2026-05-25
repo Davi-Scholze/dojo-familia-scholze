@@ -1,0 +1,59 @@
+# Supabase project config — Dojô Família Scholze
+# Usado pelo CLI `supabase` quando rodando localmente OU via `supabase link --project-ref <ref>`
+# Docs: https://supabase.com/docs/guides/cli/config
+
+# Project ref do dashboard (Project Settings > General > Reference ID)
+# Atualizar quando o project estiver linked
+project_id = "dojo-familia-scholze"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+# Site URL principal (apps/app rodando local em dev)
+site_url = "http://localhost:5173"
+# URLs adicionais permitidas pra redirect (apps/site + Vercel preview)
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "http://localhost:4173",
+  "https://dojofs-app-preview.vercel.app",
+  "https://dojofs-site-preview.vercel.app"
+]
+jwt_expiry = 3600
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "1s"
+
+[auth.sms]
+enable_signup = false
