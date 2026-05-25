@@ -1,7 +1,7 @@
 ---
 tipo: spec
 data: 2026-05-25
-status: aberto
+status: em-andamento
 escopo: dojo-familia-scholze — Sprint 1a (parte 1/3 da Sprint 1)
 nivel_operacional: L1
 related:
@@ -228,6 +228,170 @@ Mensuráveis e verificáveis por comando ou observação:
 - [ ] `ARQUITETURA-MESTRE.md` §11 marca Sprint 1a ✅
 - [ ] Evidence Bloc adicionado a esta spec ao final do `/complete`
 
+## Tasks
+
+> Decomposição em 10 tasks atômicas (regra-base 7). DAG com paralelismo declarado.
+> Soma estimada: **~6h15** trabalho focado (cabe em 1-2 sessões noturnas Davi).
+
+### DAG
+
+```
+T1 (deps @supabase/ssr) → T2 (helpers SSR) ─┬─→ T5 (middleware + env) ─┬─→ T6 (/login) ─┐
+                                            │                           ├─→ T7 (/auth/callback) ─┼─→ T9 (Vercel + smoke prod) → T10 (/complete)
+                                            └──→ T8 (dashboard logado) ──────────────────────────┘
+                                                          ↑
+T3 (migration 0002 — aprovação humana) → T4 (seed test profiles) ──────┘
+[paralelo a T1+T2]
+```
+
+### T1 — Adicionar dependência `@supabase/ssr`
+
+- **Tipo:** setup
+- **Depende de:** _(nenhuma)_
+- **Estimativa:** 10min
+- **Critério de done:**
+  - [ ] `apps/site/package.json` ganha `"@supabase/ssr": "^0.5.x"` em deps
+  - [ ] `packages/supabase/package.json` ganha `@supabase/ssr` em `peerDependencies`
+  - [ ] `npm install` exit 0, sem high vulnerabilities novas
+  - [ ] `npm run typecheck` continua exit 0
+- **Commit alvo:** `chore(deps): adiciona @supabase/ssr pra auth Next.js SSR`
+
+### T2 — Helpers SSR em `packages/supabase`
+
+- **Tipo:** feature
+- **Depende de:** T1
+- **Estimativa:** 30-45min
+- **Critério de done:**
+  - [ ] `packages/supabase/src/server.ts` — `createServerClient(cookies)` factory pra Server Components + Route Handlers + Server Actions
+  - [ ] `packages/supabase/src/middleware.ts` — `updateSession(request)` helper que refresca cookies session
+  - [ ] `packages/supabase/src/index.ts` exporta `createServerClient`, `updateSession`
+  - [ ] `packages/supabase/package.json` `exports` field ganha `./server` e `./middleware`
+  - [ ] `npm run typecheck --workspace=packages/supabase` exit 0
+- **Commit alvo:** `feat(packages/supabase): adiciona helpers SSR (createServerClient + updateSession)`
+
+### T3 — Migration 0002 (refactor profiles + singleton dojo) — **APROVAÇÃO HUMANA**
+
+- **Tipo:** infra
+- **Depende de:** _(nenhuma — paralelo a T1+T2)_
+- **Estimativa:** 45min (gerar SQL + apresentar 4 dados + Davi aprovar textualmente + aplicar via Management API + validar)
+- **Critério de done:**
+  - [ ] `supabase/migrations/0002_owner_user_id_refactor.sql` criado com: INSERT singleton dojo (idempotente `ON CONFLICT DO NOTHING`) + DROP constraint `profiles_id_fkey` + ALTER `profiles.id` pra UUID standalone com `DEFAULT gen_random_uuid()` + ADD `owner_user_id` FK CASCADE NOT NULL + CREATE INDEX + REPLACE function `current_user_dojo_id()` usando `owner_user_id` + DROP + RECREATE 3 policies de `profiles`
+  - [ ] `supabase/migrations/0002_owner_user_id_refactor.rollback.sql` adjacente
+  - [ ] Apresento SQL completo pro Davi com 4 dados (regra `.claude/rules/sql-migrations.md`): O QUE / QUANTO / RISCO / REVERSÃO
+  - [ ] **Aprovação textual explícita** do Davi antes de aplicar
+  - [ ] Aplicar via `POST /v1/projects/{ref}/database/query` (Management API)
+  - [ ] `scripts/validate-migration.mjs` estendido com 4 novos checks (10/10 PASS total — 6 Fase 0 + 4 novos)
+  - [ ] `SELECT count(*) FROM dojos WHERE slug='dojo-familia-scholze'` retorna **1**
+- **Commit alvo:** `feat(supabase): migration 0002 — singleton dojo + profiles.owner_user_id refactor`
+- **Notas:** banco hoje sem dados reais (auth.users vazio após cleanup Magic Link Fase 0). Refactor zero-risk.
+
+### T4 — Script `seed-test-profiles.mjs`
+
+- **Tipo:** setup
+- **Depende de:** T3
+- **Estimativa:** 30-45min
+- **Critério de done:**
+  - [ ] `scripts/seed-test-profiles.mjs` criado
+  - [ ] Via Auth Admin API (com `SUPABASE_ACCESS_TOKEN`) cria 3 users: `admin@test.local`, `professor1@test.local`, `professor2@test.local`
+  - [ ] Pra cada user cria row em `profiles` com `owner_user_id`, `dojo_id` do singleton, `role` correspondente, `full_name`
+  - [ ] Idempotente — rodar 2x não duplica (verifica existência antes)
+  - [ ] Output: lista com email + magic link dev token (pra Davi colar no browser)
+  - [ ] `SELECT count(*) FROM profiles` retorna **3** após execução
+  - [ ] `SELECT role FROM profiles ORDER BY role` retorna `admin, professor, professor`
+- **Commit alvo:** `feat(scripts): seed 3 test profiles via Auth Admin API (admin + 2 professores)`
+
+### T5 — Middleware Next.js + env var `NEXT_PUBLIC_SITE_URL`
+
+- **Tipo:** feature
+- **Depende de:** T2
+- **Estimativa:** 45min-1h
+- **Critério de done:**
+  - [ ] `apps/site/middleware.ts` criado usando `updateSession` do `@dojo-fs/supabase/middleware`
+  - [ ] Matcher exclui public paths (`/`, `/auth/callback`, `/manifest.webmanifest`, `/sw.js`, `/_next/*`, `/api/*` exceto auth)
+  - [ ] Redirect `/dashboard/*` → `/login?next=<original-path>` se sem session
+  - [ ] Redirect `/login` → `/dashboard` se já autenticado
+  - [ ] `.env.local` ganha `NEXT_PUBLIC_SITE_URL=https://dojofs-davi-scholzes-projects.vercel.app` (prod default) + comentário pra dev override `http://localhost:3000`
+  - [ ] `.env.example` documenta a var
+  - [ ] `npm run typecheck --workspace=apps/site` exit 0
+  - [ ] Smoke test local manual: `curl -I http://localhost:3000/dashboard` (sem cookie) retorna `3xx` Location `/login`
+- **Commit alvo:** `feat(middleware): auth gating /dashboard ↔ /login com @supabase/ssr`
+
+### T6 — Route `/login` (form Magic Link)
+
+- **Tipo:** feature
+- **Depende de:** T5
+- **Estimativa:** 45min
+- **Critério de done:**
+  - [ ] `apps/site/app/login/page.tsx` — Client Component com form (input email + button)
+  - [ ] `apps/site/app/login/actions.ts` — Server Action `requestMagicLink(formData)` que chama `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: process.env.NEXT_PUBLIC_SITE_URL + '/auth/callback' } })`
+  - [ ] States: idle / sending / sent (mostra "Verifique sua caixa de entrada") / error
+  - [ ] Strings via `useTranslation()` (i18n já configurado)
+  - [ ] Renderiza com identidade visual (`@dojo-fs/ui` Button + Input + paleta dojo)
+  - [ ] `npm run build` exit 0 + nova rota `/login` listada
+  - [ ] `curl -I http://localhost:3000/login` (sem cookie) retorna `200`
+- **Commit alvo:** `feat(auth): login Magic Link via signInWithOtp Server Action`
+
+### T7 — Route handler `/auth/callback`
+
+- **Tipo:** feature
+- **Depende de:** T5
+- **Estimativa:** 30min
+- **Critério de done:**
+  - [ ] `apps/site/app/auth/callback/route.ts` — `export async function GET(request)` Route Handler
+  - [ ] Lê `code` query param + `next` (default `/dashboard`)
+  - [ ] Chama `supabase.auth.exchangeCodeForSession(code)` via `createServerClient`
+  - [ ] Em sucesso: `redirect(new URL(next, request.url))` com cookies session via response
+  - [ ] Em falha: `redirect('/login?error=auth_callback')`
+  - [ ] `npm run typecheck` + `npm run build` exit 0
+  - [ ] Smoke local: `curl -I "http://localhost:3000/auth/callback?code=fake"` não crasha, retorna 3xx
+- **Commit alvo:** `feat(auth): callback route exchangeCodeForSession + redirect`
+
+### T8 — Dashboard com user + profile + logout
+
+- **Tipo:** feature
+- **Depende de:** T2, T5
+- **Estimativa:** 45min
+- **Critério de done:**
+  - [ ] `apps/site/app/dashboard/layout.tsx` reescrito como Server Component que via `createServerClient` carrega `user` (de `auth.getUser()`) + `profile` (de `SELECT * FROM profiles WHERE owner_user_id = user.id`)
+  - [ ] `apps/site/app/dashboard/page.tsx` recebe profile via props/contexto e renderiza `Bem-vindo, ${profile.full_name}` + badge `{profile.role}` (substitui placeholder estático)
+  - [ ] `apps/site/components/UserBadge.tsx` (Client Component) — exibe nome + role + botão "Sair"
+  - [ ] `apps/site/app/dashboard/actions.ts` — Server Action `signOut()` que chama `supabase.auth.signOut()` + `revalidatePath('/', 'layout')` + `redirect('/login')`
+  - [ ] `npm run build` exit 0 com `/dashboard` ainda listada
+  - [ ] Warning ESLint `<img>` permanece (tech debt Sprint 1c — não regressão)
+- **Commit alvo:** `feat(dashboard): server component com user + profile + badge role + logout`
+
+### T9 — Vercel env var + deploy + smoke test prod
+
+- **Tipo:** infra
+- **Depende de:** T6, T7, T8 (e implicitamente T3, T4 via banco)
+- **Estimativa:** 30min
+- **Critério de done:**
+  - [ ] `NEXT_PUBLIC_SITE_URL=https://dojofs-davi-scholzes-projects.vercel.app` setado no Vercel project `dojofs` (production + preview) via Management API
+  - [ ] Push commits T6+T7+T8 dispara auto-deploy
+  - [ ] Polling via `scripts/wait-deploys.mjs` (adaptado pra 1 project) até READY
+  - [ ] `curl -I https://dojofs-davi-scholzes-projects.vercel.app/dashboard` retorna `3xx Location /login*` (sem cookies)
+  - [ ] `curl -I https://dojofs-davi-scholzes-projects.vercel.app/login` retorna `200` com HTML form
+  - [ ] CI GitHub Actions run **success** após push
+  - [ ] **Davi testa Magic Link manualmente** (com permissão prévia textual — memória `feedback_pedir_permissao_acoes_externas`) usando 1 dos 3 test profiles
+- **Commit alvo:** `chore(vercel): seta NEXT_PUBLIC_SITE_URL prod + smoke test deploy`
+
+### T10 — `/complete` Sprint 1a + Evidence Bloc + docs sync
+
+- **Tipo:** docs
+- **Depende de:** T9
+- **Estimativa:** 30min
+- **Critério de done:**
+  - [ ] Skill `/complete` rodada sobre esta spec
+  - [ ] Evidence Bloc persistido ao final desta spec com timestamp + comando rodado por critério + output literal + resultado por categoria + limitações honestas
+  - [ ] Status spec: `em-andamento` → `implementado` + `data_complete: 2026-05-25` (ou data real do dia que terminar)
+  - [ ] Memória `project_dojo` atualizada com 3 test profiles + Sprint 1a done
+  - [ ] `ARQUITETURA-MESTRE.md` §11 marca Sprint 1a ✅ + adiciona Sprint 1b/1c como próximos
+  - [ ] `PROMPT_MASTER_HANDOFF.md` raiz atualizado pra próxima Sessão Zero pegar contexto Sprint 1a fechado
+  - [ ] Regra-base 11 (Iron Law) respeitada — sem claim de "complete" sem Evidence Bloc adjacente
+- **Commit alvo:** `complete(dojo): Evidence Bloc Sprint 1a — auth Magic Link + dashboard + 3 test profiles`
+
+---
+
 ## Próximo passo
 
-→ `/break` decomporá esta spec em tasks atômicas. Estimativa preliminar: **8-10 tasks**, soma estimada **~4-6h** trabalho focado.
+→ `/plan` produzirá plano executável com ordem cronológica respeitando DAG + paralelismo aproveitado (T3+T4 banco paralelo a T1+T2 código) + checkpoints + stop-criteria. Estimativa: **~6h15** distribuída em 1-2 sessões noturnas.
