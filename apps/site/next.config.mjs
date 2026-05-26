@@ -13,6 +13,13 @@ const nextConfig = {
   transpilePackages: ["@dojo-fs/ui", "@dojo-fs/lib", "@dojo-fs/supabase"],
   images: {
     formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+    ],
   },
 };
 

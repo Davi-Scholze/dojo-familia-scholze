@@ -2,31 +2,25 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import {
   Button,
   Input,
   ORG_NAME,
+  ORG_SHORT,
   SLOGAN,
   KANJI,
   FILOSOFIA_CITACAO,
   SENSEI,
 } from "@dojo-fs/ui";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
-import {
-  motion,
-  heroReveal,
-  heroRevealDelayed,
-  lineDrawReveal,
-  formReveal,
-  sentCardReveal,
-  quoteReveal,
-  fadeOnly,
-  DURATION_EPIC,
-  EASE_EMPHASIZED,
-} from "@/components/MotionConfig";
 import { requestMagicLink } from "./actions";
+
+// Mesma foto Unsplash B&W usada no hero da landing — consistência visual
+const LOGIN_HERO_IMAGE =
+  "https://images.unsplash.com/photo-1611711605692-acb25d5d8399?q=80&w=1600&auto=format&fit=crop";
 
 export default function LoginPage() {
   return (
@@ -38,7 +32,8 @@ export default function LoginPage() {
 
 function LoginContent() {
   const { t } = useTranslation();
-  const reduced = useReducedMotion();
+  // useReducedMotion mantido pra futura adição de animações pontuais
+  useReducedMotion();
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
   );
@@ -58,326 +53,234 @@ function LoginContent() {
 
   return (
     <main
-      className="relative flex min-h-screen flex-col items-center justify-center bg-dojo-black px-6 py-16 sm:py-24"
+      className="min-h-screen bg-dojo-black text-dojo-white"
       aria-label={`Área de acesso — ${ORG_NAME}`}
     >
-      {/*
-        Linha de faixa superior — scaleX(0 → 1), transform-origin: left.
-        Referência andrewolfboxing.club: linha "desenha" da esquerda,
-        sensação de faixa sendo posta no tatame.
-        prefers-reduced-motion: sem animação de escala — aparece direto.
-      */}
-      <motion.div
-        className="absolute inset-x-0 top-0 h-0.5 bg-dojo-red"
+      {/* Linha decorativa superior */}
+      <div
+        className="fixed inset-x-0 top-0 z-50 h-0.5 bg-dojo-red"
         aria-hidden="true"
-        style={{ transformOrigin: "left" }}
-        variants={reduced ? undefined : lineDrawReveal}
-        initial={reduced ? undefined : "hidden"}
-        animate={reduced ? undefined : "visible"}
       />
 
-      <section className="flex w-full max-w-md flex-col items-center gap-0 text-center">
-
-        {/* ── HERO: Logo ── */}
-        {/*
-          heroReveal: opacity 0→1 + translateY 12px→0 em duration-epic (700ms).
-          Primeiro elemento a aparecer — âncora visual da página.
-        */}
-        <motion.div
-          className="w-full max-w-xs sm:max-w-sm"
-          variants={reduced ? fadeOnly : heroReveal}
-          initial="hidden"
-          animate="visible"
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
+        {/* ─────────────── LADO ESQUERDO — Foto cinematográfica B&W ─────────────── */}
+        <aside
+          className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between"
+          aria-hidden="true"
         >
           <Image
-            src="/logo-retangular-preto.png"
-            alt={`Logo oficial ${ORG_NAME}`}
-            width={480}
-            height={240}
+            src={LOGIN_HERO_IMAGE}
+            alt=""
+            fill
             priority
-            className="h-auto w-full object-contain"
+            sizes="50vw"
+            className="object-cover grayscale"
           />
-        </motion.div>
 
-        {/* ── HERO: Slogan + Kanji ── */}
-        {/*
-          heroRevealDelayed: mesma curva do logo mas com delay de 150ms.
-          Slogan e kanji chegam juntos como uma unidade — separar aumentaria
-          o tempo de reveal total sem ganho perceptual.
-          Delay 150ms: duration-fast (feedback imediato como referência de tempo).
-        */}
-        <motion.div
-          className="mt-8 space-y-3 sm:mt-10"
-          variants={reduced ? fadeOnly : heroRevealDelayed}
-          initial="hidden"
-          animate="visible"
-          transition={
-            reduced
-              ? undefined
-              : {
-                  duration: DURATION_EPIC,
-                  ease: EASE_EMPHASIZED,
-                  delay: 0.15, // 150ms após logo
-                }
-          }
-        >
-          <p
-            className="font-display text-2xl font-bold uppercase tracking-widest text-dojo-red sm:text-3xl"
-            aria-label={`Slogan: ${SLOGAN}`}
-          >
-            {SLOGAN}
-          </p>
-          <p
-            className="font-display text-lg tracking-wide text-dojo-white sm:text-xl"
-            aria-label={`Modalidades: Judô e Jiu-Jitsu`}
-          >
-            {KANJI.judo}
-            <span className="mx-3 text-dojo-red" aria-hidden="true">
-              •
-            </span>
-            {KANJI.jiujitsu}
-          </p>
-        </motion.div>
+          {/* Overlay gradiente */}
+          <div className="absolute inset-0 bg-gradient-to-br from-dojo-black/60 via-dojo-black/40 to-dojo-black/80" />
 
-        {/* ── Divisor tênue ── */}
-        {/*
-          Aparece junto com o hero — sem animação própria.
-          Fazer o divisor animar separado seria overload visual.
-        */}
-        <div
-          className="my-12 h-px w-16 bg-dojo-red sm:my-14"
-          aria-hidden="true"
-        />
-
-        {/* ── FORMULÁRIO ou ESTADO "ENVIADO" ── */}
-        {/*
-          AnimatePresence mode="wait": aguarda exit animation do elemento
-          saindo antes de montar o novo.
-          Crossfade com scale 0.98→1: sutileza que o cérebro lê como
-          "elemento ganhou peso real" sem efeito cartoonesco.
-
-          formReveal: delay 400ms após slogan — não apressado (briefing §4).
-          sentCardReveal: sem delay — já é resposta a ação do usuário,
-          deve aparecer rápido (dentro do duration-slow de 400ms).
-        */}
-        <AnimatePresence mode="wait" initial={false}>
-          {state === "sent" ? (
-            <motion.div
-              key="sent"
-              className="w-full"
-              variants={reduced ? fadeOnly : sentCardReveal}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
+          {/* Top: link "Voltar" */}
+          <div className="relative z-10 p-10">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-3 text-xs uppercase tracking-widest text-dojo-white/70 transition-colors hover:text-dojo-white"
             >
-              <SentCard
-                onReset={() => {
-                  setState("idle");
-                  setError(null);
-                }}
-                t={t}
+              <span aria-hidden="true">←</span>
+              <span>Voltar ao site</span>
+            </Link>
+          </div>
+
+          {/* Bottom: logo + slogan grande */}
+          <div className="relative z-10 p-10">
+            <div className="flex items-center gap-4">
+              <Image
+                src="/logo-redondo-branco.png"
+                alt=""
+                width={56}
+                height={56}
+                className="h-14 w-14 rounded-full"
               />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="form"
-              className="w-full"
-              variants={reduced ? fadeOnly : formReveal}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              transition={
-                reduced
-                  ? undefined
-                  : {
-                      duration: 0.4, // duration-slow
-                      ease: [0.2, 0, 0, 1], // ease-standard
-                      delay: state === "idle" ? 0.4 : 0, // delay inicial 400ms
-                    }
-              }
-            >
-              <form
-                action={onSubmit}
-                className="w-full space-y-5"
-                aria-label={t("auth.form_label") || "Formulário de acesso"}
-                noValidate
-              >
-                {/* Label explícita — acessibilidade WCAG 1.3.1 */}
-                <div className="space-y-2 text-left">
-                  <label
-                    htmlFor="login-email"
-                    className="block text-xs font-medium uppercase tracking-widest text-dojo-white"
-                  >
-                    {t("auth.email_label") || "Email"}
-                  </label>
-                  <Input
-                    id="login-email"
-                    name="email"
-                    type="email"
-                    inputMode="email"
-                    required
-                    autoComplete="email"
-                    placeholder="seu@email.com"
-                    disabled={state === "sending"}
-                    aria-describedby="login-email-hint"
-                    className={[
-                      "h-12 rounded-sm border-dojo-gray bg-transparent",
-                      "text-dojo-white placeholder:text-dojo-gray",
-                      "focus-visible:border-dojo-red focus-visible:ring-1 focus-visible:ring-dojo-red",
-                      "disabled:opacity-50",
-                    ].join(" ")}
-                  />
-                </div>
+              <div>
+                <p className="font-display text-2xl font-bold uppercase tracking-widest text-dojo-white">
+                  {ORG_SHORT}
+                </p>
+                <p className="text-xs uppercase tracking-widest text-dojo-white/50">
+                  {KANJI.judo} · {KANJI.jiujitsu}
+                </p>
+              </div>
+            </div>
 
-                {/* Mensagem de erro inline */}
-                <AnimatePresence>
+            <p className="mt-8 font-display text-4xl font-bold uppercase leading-tight tracking-tight text-dojo-white lg:text-5xl">
+              {SLOGAN}
+            </p>
+
+            <blockquote className="mt-12 border-l-2 border-dojo-red pl-6">
+              <p className="font-serif text-base italic leading-relaxed text-dojo-white/80 lg:text-lg">
+                &ldquo;{FILOSOFIA_CITACAO.texto}&rdquo;
+              </p>
+              <footer className="mt-3 text-xs uppercase tracking-widest text-dojo-white/50">
+                — {FILOSOFIA_CITACAO.autor}
+              </footer>
+            </blockquote>
+          </div>
+        </aside>
+
+        {/* ─────────────── LADO DIREITO — Form ─────────────── */}
+        <section className="flex min-h-screen flex-col px-6 py-12 sm:px-12 lg:py-16">
+          {/* Header mobile-only: link "Voltar" + logo */}
+          <div className="flex items-center justify-between lg:hidden">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-dojo-white/70 transition-colors hover:text-dojo-white"
+            >
+              <span aria-hidden="true">←</span>
+              <span>Voltar</span>
+            </Link>
+            <Image
+              src="/logo-redondo-branco.png"
+              alt={`${ORG_SHORT}`}
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-full"
+            />
+          </div>
+
+          {/* Centro vertical do form */}
+          <div className="flex flex-1 items-center justify-center">
+            <div className="w-full max-w-md">
+              {/* Hero foto mobile-only — substitui o split */}
+              <div className="relative mb-12 aspect-[16/9] overflow-hidden rounded-sm lg:hidden">
+                <Image
+                  src={LOGIN_HERO_IMAGE}
+                  alt=""
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-cover grayscale"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-dojo-black via-dojo-black/40 to-transparent" />
+                <div className="absolute bottom-6 left-6">
+                  <p className="font-display text-xl font-bold uppercase tracking-widest text-dojo-white">
+                    {SLOGAN}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-widest text-dojo-white/60">
+                    {KANJI.judo} · {KANJI.jiujitsu}
+                  </p>
+                </div>
+              </div>
+
+              {/* Título form */}
+              <div className="mb-10 text-left">
+                <p className="mb-4 font-display text-xs uppercase tracking-[0.4em] text-dojo-red">
+                  Acesso ao Sistema
+                </p>
+                <h1 className="font-display text-4xl font-bold uppercase leading-tight tracking-tight text-dojo-white sm:text-5xl">
+                  Entre no
+                  <br />
+                  <span className="text-dojo-red">Dojô</span>
+                </h1>
+                <p className="mt-4 text-sm leading-relaxed text-dojo-white/60">
+                  Digite seu email — você recebe um link de acesso direto. Sem senhas.
+                </p>
+              </div>
+
+              {/* Form OR SentCard */}
+              {state === "sent" ? (
+                <SentCard
+                  onReset={() => {
+                    setState("idle");
+                    setError(null);
+                  }}
+                />
+              ) : (
+                <form action={onSubmit} className="space-y-5" noValidate>
+                  <div className="space-y-2 text-left">
+                    <label
+                      htmlFor="login-email"
+                      className="block text-xs font-medium uppercase tracking-widest text-dojo-white"
+                    >
+                      {t("auth.email_label") || "Email"}
+                    </label>
+                    <Input
+                      id="login-email"
+                      name="email"
+                      type="email"
+                      inputMode="email"
+                      required
+                      autoComplete="email"
+                      placeholder="seu@email.com"
+                      disabled={state === "sending"}
+                      aria-describedby="login-email-hint"
+                      className="h-12 rounded-sm border-dojo-gray bg-transparent text-dojo-white placeholder:text-dojo-gray focus-visible:border-dojo-red focus-visible:ring-1 focus-visible:ring-dojo-red disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+
                   {state === "error" && error && (
-                    <motion.p
-                      key="error"
+                    <p
                       role="alert"
                       aria-live="assertive"
-                      className="rounded-sm border border-destructive bg-transparent px-4 py-3 text-sm text-destructive"
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.15, ease: [0.2, 0, 0, 1] }}
+                      className="rounded-sm border border-destructive bg-destructive/5 px-4 py-3 text-sm text-destructive"
                     >
                       {error}
-                    </motion.p>
+                    </p>
                   )}
-                </AnimatePresence>
 
-                {/* CTA principal */}
-                {/*
-                  whileTap: scale 0.98 — feedback de press físico.
-                  Referência andrewolfboxing.club: micro-interação de toque.
-                  active:scale-[0.98] Tailwind mantido como fallback CSS
-                  (antes do JS hidrate) — o whileTap sobrepõe em runtime.
-                  whileHover apenas no botão CTA — não em todo elemento
-                  (anti-padrão: hover em TUDO = overload visual).
-                */}
-                <motion.div
-                  whileHover={reduced ? undefined : { scale: 1.005 }}
-                  whileTap={reduced ? undefined : { scale: 0.98 }}
-                  transition={{ duration: 0.15, ease: [0.2, 0, 0, 1] }}
-                >
                   <Button
                     type="submit"
                     variant="default"
                     size="lg"
                     disabled={state === "sending"}
                     aria-busy={state === "sending"}
-                    className={[
-                      "h-12 w-full rounded-sm",
-                      "bg-dojo-red text-dojo-white",
-                      "text-xs font-bold uppercase tracking-widest",
-                      "hover:bg-dojo-red/90 active:scale-[0.98]",
-                      "focus-visible:ring-2 focus-visible:ring-dojo-red focus-visible:ring-offset-2 focus-visible:ring-offset-dojo-black",
-                      "disabled:opacity-50 disabled:cursor-not-allowed",
-                      "transition-all duration-150",
-                    ].join(" ")}
+                    className="h-12 w-full rounded-sm bg-dojo-red text-xs font-bold uppercase tracking-widest text-dojo-white transition-all hover:bg-dojo-red/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-dojo-red focus-visible:ring-offset-2 focus-visible:ring-offset-dojo-black disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {state === "sending"
-                      ? (t("auth.sending") || "Enviando…")
-                      : (t("auth.cta") || "RECEBER LINK DE ACESSO")}
+                      ? t("auth.sending") || "Enviando…"
+                      : t("auth.cta") || "Receber link de acesso"}
                   </Button>
-                </motion.div>
 
-                {/* Microcopy Magic Link */}
-                <p
-                  id="login-email-hint"
-                  className="mt-1 text-xs uppercase tracking-widest text-dojo-gray"
-                >
-                  {t("auth.magiclink_hint") ||
-                    "Sem senhas. Você recebe um link seguro de acesso direto no email."}
-                </p>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  <p
+                    id="login-email-hint"
+                    className="text-xs uppercase tracking-widest text-dojo-gray"
+                  >
+                    Sistema de acesso por link mágico — sem senhas.
+                  </p>
+                </form>
+              )}
+            </div>
+          </div>
 
-        {/* ── Divisor contemplativo ── */}
-        <div
-          className="my-12 h-px w-full bg-dojo-gray/30 sm:my-14"
-          aria-hidden="true"
-        />
-
-        {/* ── CITAÇÃO JIGORO KANO — mood Lupine Lights ── */}
-        {/*
-          whileInView: só anima quando entra no viewport.
-          viewport.once: true — não re-anima ao rolar de volta (respeitoso).
-          viewport.margin: "-40px" — começa um pouco antes do elemento
-          estar 100% visível (sensação de continuidade, não abrupta).
-          translateX(-8px → 0): revelação da esquerda, como se saísse da
-          sombra da borda vermelha onde está apoiada.
-        */}
-        <motion.blockquote
-          className="w-full border-l-2 border-dojo-red pl-6 text-left"
-          aria-label={`Citação de ${FILOSOFIA_CITACAO.autor}`}
-          variants={reduced ? fadeOnly : quoteReveal}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-40px" }}
-        >
-          <p className="font-serif text-sm italic leading-relaxed text-dojo-white/80 sm:text-base">
-            &ldquo;{FILOSOFIA_CITACAO.texto}&rdquo;
-          </p>
-          <footer className="mt-3 text-xs uppercase tracking-widest text-dojo-gray">
-            — {FILOSOFIA_CITACAO.autor}
-          </footer>
-        </motion.blockquote>
-
-        {/* ── FOOTER sutil ── */}
-        {/*
-          Sem animação de movimento — apenas opacity fade.
-          É o elemento mais periférico da página; animar com slide
-          ou scale seria hierarquicamente incorreto.
-        */}
-        <motion.p
-          className="mt-12 text-xs uppercase tracking-widest text-dojo-gray sm:mt-14"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, ease: [0.2, 0, 0, 1], delay: 0.6 }}
-        >
-          Sensei {SENSEI} · 2026
-        </motion.p>
-
-      </section>
-
-      {/* Linha decorativa inferior — espelho da superior, sem animação */}
-      <div
-        className="absolute inset-x-0 bottom-0 h-0.5 bg-dojo-gray/30"
-        aria-hidden="true"
-      />
+          {/* Footer */}
+          <div className="border-t border-dojo-white/10 pt-8 text-center text-xs uppercase tracking-widest text-dojo-white/40">
+            Sensei {SENSEI} · 2026
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   SentCard — estado após envio do Magic Link
-   Mesmo peso visual da identidade, sem sair do dark-first
-───────────────────────────────────────────────────────────────────────── */
+// ─── SentCard — após envio do Magic Link ─────────────────────────────────────
+
 interface SentCardProps {
   onReset: () => void;
-  t: (key: string) => string;
 }
 
-function SentCard({ onReset, t }: SentCardProps) {
+function SentCard({ onReset }: SentCardProps) {
   return (
     <div
       role="status"
       aria-live="polite"
-      className="w-full space-y-6 rounded-sm border border-dojo-red/40 bg-dojo-gray/10 px-6 py-8 text-left"
+      className="space-y-6 rounded-sm border border-dojo-red/40 bg-dojo-gray/10 p-8 text-left"
     >
-      {/* Ícone tênue — envelope em unicode, sem emoji-mood, sem import de lib */}
       <div
-        className="flex h-11 w-11 items-center justify-center rounded-sm border border-dojo-red/30"
+        className="flex h-12 w-12 items-center justify-center rounded-sm border border-dojo-red/40"
         aria-hidden="true"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="22"
+          height="22"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -385,35 +288,29 @@ function SentCard({ onReset, t }: SentCardProps) {
           strokeLinecap="round"
           strokeLinejoin="round"
           className="text-dojo-red"
-          aria-hidden="true"
         >
-          <rect width="20" height="16" x="2" y="4" rx="2" />
-          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+          <rect x="3" y="5" width="18" height="14" rx="1" />
+          <path d="m3 7 9 6 9-6" />
         </svg>
       </div>
 
-      <div className="space-y-2">
-        <p className="text-sm font-bold uppercase tracking-widest text-dojo-white">
-          {t("auth.sent_title") || "Verifique sua caixa de entrada"}
+      <div>
+        <p className="font-display text-xl font-bold uppercase tracking-widest text-dojo-white">
+          Link enviado
         </p>
-        <p className="text-sm leading-relaxed text-dojo-gray">
-          {t("auth.sent_body") ||
-            "Enviamos um link de acesso seguro para o seu email. Ele é válido por 10 minutos."}
+        <p className="mt-3 text-sm leading-relaxed text-dojo-white/70">
+          Verifique sua caixa de entrada — o link expira em 1 hora e funciona
+          apenas uma vez.
         </p>
       </div>
 
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
+        type="button"
         onClick={onReset}
-        className={[
-          "h-9 px-0 text-xs uppercase tracking-widest",
-          "text-dojo-gray hover:text-dojo-white",
-          "focus-visible:ring-1 focus-visible:ring-dojo-red",
-        ].join(" ")}
+        className="h-11 w-full rounded-sm border border-dojo-white/20 bg-transparent text-xs font-bold uppercase tracking-widest text-dojo-white/70 transition-all hover:border-dojo-white/40 hover:text-dojo-white active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-dojo-red focus-visible:ring-offset-2 focus-visible:ring-offset-dojo-black"
       >
-        {t("auth.try_another") || "Tentar com outro email"}
-      </Button>
+        Tentar com outro email
+      </button>
     </div>
   );
 }
