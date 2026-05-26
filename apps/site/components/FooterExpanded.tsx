@@ -137,20 +137,20 @@ export function FooterExpanded() {
                 </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/#locais"
                   className="text-sm text-dojo-white/60 transition-colors hover:text-dojo-white"
                 >
                   Locais & Planos
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/#avaliacoes"
                   className="text-sm text-dojo-white/60 transition-colors hover:text-dojo-white"
                 >
                   Avaliações
-                </a>
+                </Link>
               </li>
               <li>
                 <Link
@@ -178,12 +178,12 @@ export function FooterExpanded() {
                 </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/#contato"
                   className="text-sm text-dojo-white/60 transition-colors hover:text-dojo-white"
                 >
                   Aula experimental
-                </a>
+                </Link>
               </li>
             </ul>
 
