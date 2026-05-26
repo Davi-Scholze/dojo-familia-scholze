@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useReducedMotion } from "framer-motion";
 import {
@@ -11,27 +12,32 @@ import {
 } from "./MotionConfig";
 
 interface PageHeroProps {
-  /** Eyebrow uppercase tracking-wide vermelho (ex: "A história", "O que ensinamos") */
   label: string;
-  /** Título h1 da página (pode incluir <br /> via JSX como children) */
   title: React.ReactNode;
-  /** Lead paragraph descritivo (1-2 frases curtas) */
   lead?: string;
-  /** Breadcrumb path atual (sem "Início" — adicionado automático) */
   breadcrumb: string;
+  /** URL Unsplash/CDN de background grayscale opcional. Aplicado opacity-25 + gradient overlay */
+  bgImage?: string;
+  /** Alt text da bgImage (decorativa por padrão — "") */
+  bgAlt?: string;
 }
 
 /**
- * Page Hero padronizado para todas páginas públicas dedicadas
- * (`/sobre`, `/modalidades`, `/contato`).
+ * Page Hero padronizado das páginas públicas dedicadas (/sobre, /modalidades, /contato).
  *
- * Mantém continuidade visual com home via:
- * - Linha vermelha topo animada (`lineDrawReveal` — mesmo elemento do hero da home)
- * - Tipografia escalada (`text-5xl sm:text-6xl lg:text-7xl` — h1 acima dos h2 internos)
- * - Background `bg-dojo-black` puro (sem imagem — sóbrio vs cinematic da home)
- * - Motion variants importados de MotionConfig (consistência com home)
+ * v2 (2026-05-27): adiciona prop `bgImage` opcional pra atmosfera japonesa
+ * (cerejeira, torii, dojô). 3 layers: image grayscale opacity-25 + gradient
+ * preto + conteúdo. Sem bgImage, fundo é dojo-black puro (compatibilidade
+ * backward com v1).
  */
-export function PageHero({ label, title, lead, breadcrumb }: PageHeroProps) {
+export function PageHero({
+  label,
+  title,
+  lead,
+  breadcrumb,
+  bgImage,
+  bgAlt = "",
+}: PageHeroProps) {
   const reduced = useReducedMotion();
   const titleVariants = reduced ? fadeOnly : heroReveal;
   const subVariants = reduced ? fadeOnly : heroRevealDelayed;
@@ -39,7 +45,28 @@ export function PageHero({ label, title, lead, breadcrumb }: PageHeroProps) {
 
   return (
     <section className="relative overflow-hidden bg-dojo-black pt-32 pb-20 sm:pt-40 sm:pb-24">
-      {/* Linha vermelha topo — continuidade visual com hero da home */}
+      {/* Layer 1: bg image opcional (grayscale + opacity baixa) */}
+      {bgImage && (
+        <Image
+          src={bgImage}
+          alt={bgAlt}
+          fill
+          priority={false}
+          sizes="100vw"
+          className="object-cover opacity-25 grayscale"
+          aria-hidden={bgAlt === "" ? "true" : undefined}
+        />
+      )}
+
+      {/* Layer 2: gradient overlay pra legibilidade do h1 */}
+      {bgImage && (
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-dojo-black/80 via-dojo-black/60 to-dojo-black"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Linha vermelha topo animada */}
       <motion.div
         className="absolute inset-x-0 top-0 h-0.5 origin-left bg-dojo-red"
         style={{ transformOrigin: "left" }}
@@ -49,7 +76,7 @@ export function PageHero({ label, title, lead, breadcrumb }: PageHeroProps) {
         aria-hidden="true"
       />
 
-      <div className="mx-auto max-w-5xl px-6 sm:px-8 lg:px-12">
+      <div className="relative mx-auto max-w-5xl px-6 sm:px-8 lg:px-12">
         {/* Breadcrumb */}
         <nav
           className="mb-8 text-xs uppercase tracking-[0.3em] text-dojo-white/50"
@@ -93,7 +120,7 @@ export function PageHero({ label, title, lead, breadcrumb }: PageHeroProps) {
             animate="visible"
             variants={subVariants}
             transition={{ delay: 0.3 }}
-            className="mt-8 max-w-2xl text-lg leading-relaxed text-dojo-white/70"
+            className="mt-8 max-w-2xl text-lg leading-relaxed text-dojo-white/80"
           >
             {lead}
           </motion.p>

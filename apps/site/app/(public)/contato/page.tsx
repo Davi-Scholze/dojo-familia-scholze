@@ -31,6 +31,8 @@ export default function ContatoPage() {
         label="Fale com a gente"
         title="Contato"
         lead={`Resposta rápida pelo WhatsApp. Sensei ${SENSEI} mesmo responde.`}
+        bgImage="https://images.unsplash.com/photo-1753459844216-8644b13d863a?w=2400&auto=format&fit=crop"
+        bgAlt=""
       />
 
       <div className="mx-auto max-w-5xl px-6 pb-20 sm:px-8 lg:px-12">

@@ -34,6 +34,8 @@ export default function SobrePage() {
           </>
         }
         lead="Uma família que ama lutar. Décadas de tatame em Curitiba, formando atletas e cidadãos no espírito do Judô tradicional e do Jiu-Jitsu refinado."
+        bgImage="https://images.unsplash.com/photo-1775924545068-e252c0252e79?w=2400&auto=format&fit=crop"
+        bgAlt=""
       />
 
       {/* Foto Sensei + texto */}
@@ -47,14 +49,14 @@ export default function SobrePage() {
         >
           <motion.div
             variants={itemVariants}
-            className="relative aspect-[4/5] overflow-hidden rounded-sm"
+            className="group relative aspect-[4/5] overflow-hidden rounded-sm"
           >
             <Image
               src={SENSEI_IMAGE}
               alt={`Sensei ${SENSEI}`}
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover grayscale"
+              className="object-cover grayscale transition-all duration-700 group-hover:scale-105 group-hover:grayscale-0"
             />
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-dojo-black to-transparent" />
           </motion.div>
