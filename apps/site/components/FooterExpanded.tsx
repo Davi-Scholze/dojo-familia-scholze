@@ -65,7 +65,7 @@ export function FooterExpanded() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram Dojô Família Scholze"
-                className="flex h-10 w-10 items-center justify-center rounded-sm border border-dojo-white/10 text-dojo-white/60 transition-all hover:border-dojo-red hover:text-dojo-red"
+                className="flex h-11 w-11 items-center justify-center rounded-sm border border-dojo-white/10 text-dojo-white/60 transition-all hover:border-dojo-red hover:text-dojo-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dojo-red focus-visible:ring-offset-2 focus-visible:ring-offset-dojo-black"
               >
                 <svg
                   width="18"
@@ -82,7 +82,7 @@ export function FooterExpanded() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="YouTube Dojô Família Scholze"
-                className="flex h-10 w-10 items-center justify-center rounded-sm border border-dojo-white/10 text-dojo-white/60 transition-all hover:border-dojo-red hover:text-dojo-red"
+                className="flex h-11 w-11 items-center justify-center rounded-sm border border-dojo-white/10 text-dojo-white/60 transition-all hover:border-dojo-red hover:text-dojo-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dojo-red focus-visible:ring-offset-2 focus-visible:ring-offset-dojo-black"
               >
                 <svg
                   width="18"
@@ -99,7 +99,7 @@ export function FooterExpanded() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp Sensei Cristiano"
-                className="flex h-10 w-10 items-center justify-center rounded-sm border border-dojo-white/10 text-dojo-white/60 transition-all hover:border-dojo-red hover:text-dojo-red"
+                className="flex h-11 w-11 items-center justify-center rounded-sm border border-dojo-white/10 text-dojo-white/60 transition-all hover:border-dojo-red hover:text-dojo-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dojo-red focus-visible:ring-offset-2 focus-visible:ring-offset-dojo-black"
               >
                 <svg
                   width="18"

@@ -21,7 +21,7 @@ export function MobileNav({ links, ctaHref, ctaLabel }: MobileNavProps) {
         <button
           type="button"
           aria-label="Abrir menu"
-          className="flex h-10 w-10 items-center justify-center text-dojo-white md:hidden"
+          className="flex h-11 w-11 items-center justify-center text-dojo-white md:hidden"
         >
           <svg
             width="24"
@@ -68,7 +68,7 @@ export function MobileNav({ links, ctaHref, ctaLabel }: MobileNavProps) {
               <button
                 type="button"
                 aria-label="Fechar menu"
-                className="flex h-10 w-10 items-center justify-center text-dojo-white/60 transition-colors hover:text-dojo-white"
+                className="flex h-11 w-11 items-center justify-center text-dojo-white/60 transition-colors hover:text-dojo-white"
               >
                 <svg
                   width="24"

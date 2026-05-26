@@ -1,1 +1,19 @@
 @import "@dojo-fs/ui/globals.css";
+
+/* ─── A11y global: focus-visible ────────────────────────────────────────────
+ * Aplicado em todos elementos interativos por padrão. #D32F2F (dojo-red hex
+ * equivalente do oklch) sobre dojo-black resolve o problema de outline
+ * browser-default invisível em fundo escuro. Compatível Chrome ≥ 90 + Safari ≥ 14.
+ * Componentes interativos podem sobrescrever com focus-visible:ring-* utility.
+ */
+:focus-visible {
+  outline: 2px solid #D32F2F;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #D32F2F;
+  outline-offset: 3px;
+}

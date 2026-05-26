@@ -5,19 +5,16 @@ import Link from "next/link";
 import { useReducedMotion } from "framer-motion";
 import {
   ORG_NAME,
-  ORG_SHORT,
   SLOGAN,
   KANJI,
   LOCALIDADE,
   FILOSOFIA_CITACAO,
   SENSEI,
 } from "@dojo-fs/ui";
-import { MobileNav } from "../components/MobileNav";
-import { Vantagens } from "../components/Vantagens";
-import { LocaisPlanos } from "../components/LocaisPlanos";
-import { Avaliacoes } from "../components/Avaliacoes";
-import { WhatsAppCTA } from "../components/WhatsAppCTA";
-import { FooterExpanded } from "../components/FooterExpanded";
+import { Vantagens } from "../../components/Vantagens";
+import { LocaisPlanos } from "../../components/LocaisPlanos";
+import { Avaliacoes } from "../../components/Avaliacoes";
+import { WhatsAppCTA } from "../../components/WhatsAppCTA";
 import {
   motion,
   heroReveal,
@@ -28,18 +25,7 @@ import {
   cardEnter,
   quoteReveal,
   fadeOnly,
-  DURATION_BASE,
-} from "../components/MotionConfig";
-
-// ─── Nav config ───────────────────────────────────────────────────────────────
-
-const NAV_LINKS = [
-  { href: "/sobre", label: "Sobre" },
-  { href: "/modalidades", label: "Modalidades" },
-  { href: "#locais", label: "Locais" },
-  { href: "#avaliacoes", label: "Avaliações" },
-  { href: "#contato", label: "Agendar" },
-];
+} from "../../components/MotionConfig";
 
 // ─── Stock photos Unsplash (substituir por fotos reais quando Sensei enviar) ──
 
@@ -55,59 +41,7 @@ const BJJ_IMAGE =
 const SENSEI_IMAGE =
   "https://images.unsplash.com/photo-1564415315949-7a0c4c73aab4?q=80&w=1600&auto=format&fit=crop";
 
-// ─── Header sticky ───────────────────────────────────────────────────────────
-
-function SiteHeader() {
-  return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-dojo-white/5 bg-dojo-black/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 sm:px-8 lg:px-12">
-        <Link href="/" className="flex items-center gap-3" aria-label="Início">
-          <Image
-            src="/logo-redondo-branco.png"
-            alt={`Logo ${ORG_SHORT}`}
-            width={36}
-            height={36}
-            priority
-            className="h-9 w-9 rounded-full"
-          />
-          <span className="hidden font-display text-sm font-bold uppercase tracking-widest text-dojo-white sm:inline">
-            {ORG_SHORT}
-          </span>
-        </Link>
-
-        <nav
-          className="hidden items-center gap-7 md:flex"
-          aria-label="Navegação principal"
-        >
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-xs uppercase tracking-widest text-dojo-white/60 transition-colors hover:text-dojo-white"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
-
-        <Link
-          href="/login"
-          className="hidden rounded-sm border border-dojo-red bg-dojo-red px-5 py-2 text-xs font-bold uppercase tracking-widest text-dojo-white transition-all hover:bg-dojo-red/90 active:scale-[0.98] md:inline-flex"
-        >
-          Entrar
-        </Link>
-
-        <MobileNav
-          links={NAV_LINKS}
-          ctaHref="/login"
-          ctaLabel="Entrar no Dojô"
-        />
-      </div>
-    </header>
-  );
-}
-
-// ─── Hero ─────────────────────────────────────────────────────────────────────
+// ─── Hero cinematográfico (exclusivo da home — dedicated usam PageHero) ──────
 
 function Hero() {
   const reduced = useReducedMotion();
@@ -216,7 +150,7 @@ function Hero() {
         </motion.div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs uppercase tracking-widest text-dojo-white/40">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs uppercase tracking-widest text-dojo-white/50">
         <span className="block animate-pulse">↓ Role</span>
       </div>
     </section>
@@ -239,7 +173,8 @@ function Sobre() {
       <motion.div
         className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 sm:px-8 lg:grid-cols-2 lg:gap-20 lg:px-12"
         initial="hidden"
-        animate="visible"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
         variants={containerVariants}
       >
         <motion.div
@@ -307,7 +242,7 @@ function Stat({ number, label }: { number: string; label: string }) {
       <p className="font-display text-3xl font-bold text-dojo-red sm:text-4xl">
         {number}
       </p>
-      <p className="mt-2 text-xs uppercase tracking-widest text-dojo-white/40">
+      <p className="mt-2 text-xs uppercase tracking-widest text-dojo-white/50">
         {label}
       </p>
     </div>
@@ -398,7 +333,7 @@ function ModalidadeCard({
   federacao: string;
 }) {
   return (
-    <article className="group relative overflow-hidden rounded-sm border border-dojo-white/10 bg-dojo-gray/5">
+    <article className="group relative overflow-hidden rounded-sm border border-dojo-white/10 bg-dojo-gray/5 transition-colors duration-300 hover:border-dojo-red/40">
       <div className="relative aspect-[4/3] overflow-hidden">
         <Image
           src={image}
@@ -430,7 +365,7 @@ function ModalidadeCard({
           {details.map((d) => (
             <li
               key={d}
-              className="text-xs uppercase tracking-widest text-dojo-white/50"
+              className="text-xs uppercase tracking-widest text-dojo-white/60"
             >
               {d}
             </li>
@@ -461,7 +396,8 @@ function Filosofia() {
       <motion.div
         className="mx-auto max-w-4xl px-6 text-center sm:px-8 lg:px-12"
         initial="hidden"
-        animate="visible"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
         variants={variants}
       >
         <p className="mb-12 font-display text-xs uppercase tracking-[0.4em] text-dojo-red">
@@ -473,10 +409,10 @@ function Filosofia() {
             &ldquo;{FILOSOFIA_CITACAO.texto}&rdquo;
           </p>
           <footer className="mt-12">
-            <p className="font-display text-sm uppercase tracking-[0.4em] text-dojo-white/40">
+            <p className="font-display text-sm uppercase tracking-[0.4em] text-dojo-white/50">
               — {FILOSOFIA_CITACAO.autor}
             </p>
-            <p className="mt-2 text-xs uppercase tracking-widest text-dojo-white/30">
+            <p className="mt-2 text-xs uppercase tracking-widest text-dojo-white/50">
               Fundador do Judô moderno
             </p>
           </footer>
@@ -486,23 +422,19 @@ function Filosofia() {
   );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+// ─── Page (consumida pelo PublicLayout) ──────────────────────────────────────
 
 export default function HomePage() {
   return (
     <>
-      <SiteHeader />
-      <main className="bg-dojo-black">
-        <Hero />
-        <Sobre />
-        <Modalidades />
-        <Vantagens />
-        <LocaisPlanos />
-        <Filosofia />
-        <Avaliacoes />
-        <WhatsAppCTA />
-      </main>
-      <FooterExpanded />
+      <Hero />
+      <Sobre />
+      <Modalidades />
+      <Vantagens />
+      <LocaisPlanos />
+      <Filosofia />
+      <Avaliacoes />
+      <WhatsAppCTA />
     </>
   );
 }

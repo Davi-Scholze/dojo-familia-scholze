@@ -1,12 +1,24 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
+import { useReducedMotion } from "framer-motion";
 import { ORG_NAME, KANJI } from "@dojo-fs/ui";
+import { PageHero } from "../../../components/PageHero";
+import {
+  motion,
+  staggerContainerSlow,
+  metricRowEnter,
+  cardEnter,
+  overviewCardReveal,
+  fadeOnly,
+} from "../../../components/MotionConfig";
 
-export const metadata: Metadata = {
-  title: `Modalidades · ${ORG_NAME}`,
-  description: `Judô (CBJ) + Jiu-Jitsu (IBJJF) no ${ORG_NAME}. Sistema de faixas, graduações, cerimônias formais. Infantil e adulto.`,
-};
-
+/**
+ * Cores literais das faixas — EXCEÇÃO SEMÂNTICA documentada:
+ * Não são cores da marca (dojo-red/black/white). São cores REAIS das faixas
+ * conforme CBJ + IBJJF. NÃO trocar por tokens dojo — o contexto (badge pequeno
+ * com label cor escrita) deixa claro que é informação semântica.
+ */
 const FAIXAS_JUDO = [
   { cor: "Branca", desc: "Iniciante", bg: "bg-white", text: "text-dojo-black" },
   { cor: "Amarela", desc: "Primeira graduação", bg: "bg-yellow-400", text: "text-dojo-black" },
@@ -26,31 +38,71 @@ const FAIXAS_BJJ = [
   { cor: "Preta", desc: "Mestre (1º a 9º grau)", bg: "bg-dojo-black border border-dojo-white/30", text: "text-dojo-white" },
 ];
 
-export default function ModalidadesPage() {
+function FaixasList({
+  faixas,
+  ariaLabel,
+}: {
+  faixas: typeof FAIXAS_JUDO;
+  ariaLabel: string;
+}) {
+  const reduced = useReducedMotion();
+  const containerVariants = reduced ? fadeOnly : staggerContainerSlow;
+  const rowVariants = reduced ? fadeOnly : metricRowEnter;
+
   return (
-    <main className="min-h-screen bg-dojo-black pt-24 pb-24 sm:pt-32 sm:pb-32">
-      <div className="mx-auto max-w-5xl px-6 sm:px-8 lg:px-12">
-        {/* Breadcrumb */}
-        <nav className="mb-8 text-xs uppercase tracking-[0.3em] text-dojo-white/40">
-          <Link href="/" className="transition-colors hover:text-dojo-red">
-            Início
-          </Link>
-          <span className="mx-3">·</span>
-          <span className="text-dojo-white/60">Modalidades</span>
-        </nav>
+    <motion.ul
+      className="space-y-2"
+      aria-label={ariaLabel}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-50px" }}
+      variants={containerVariants}
+    >
+      {faixas.map((f) => (
+        <motion.li
+          key={f.cor}
+          variants={rowVariants}
+          className="flex items-center gap-4 rounded-sm border border-dojo-white/10 bg-dojo-gray/5 p-3 transition-colors hover:border-dojo-red/40"
+        >
+          <span
+            className={`flex h-8 w-16 items-center justify-center rounded-sm text-xs font-bold uppercase ${f.bg} ${f.text}`}
+          >
+            {f.cor}
+          </span>
+          <span className="text-sm text-dojo-white/70">{f.desc}</span>
+        </motion.li>
+      ))}
+    </motion.ul>
+  );
+}
 
-        {/* Header */}
-        <header className="mb-16">
-          <p className="mb-4 font-display text-xs uppercase tracking-[0.4em] text-dojo-red">
-            O que ensinamos
-          </p>
-          <h1 className="font-display text-4xl font-bold uppercase leading-tight tracking-tight text-dojo-white sm:text-5xl lg:text-6xl">
+export default function ModalidadesPage() {
+  const reduced = useReducedMotion();
+  const cardVariants = reduced ? fadeOnly : cardEnter;
+  const ceremoniaVariants = reduced ? fadeOnly : overviewCardReveal;
+
+  return (
+    <>
+      <PageHero
+        breadcrumb="Modalidades"
+        label="O que ensinamos"
+        title={
+          <>
             Modalidades<br />& Graduações
-          </h1>
-        </header>
+          </>
+        }
+        lead="Judô (CBJ) + Jiu-Jitsu (IBJJF) sob o mesmo Sensei. Formação técnica completa, do iniciante absoluto à graduação avançada."
+      />
 
+      <div className="mx-auto max-w-5xl px-6 pb-20 sm:px-8 lg:px-12">
         {/* Judô */}
-        <section className="mb-20 border-t border-dojo-white/10 pt-12">
+        <motion.section
+          className="mb-20 border-t border-dojo-white/10 pt-16 sm:pt-20"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={cardVariants}
+        >
           <div className="mb-8 flex items-baseline gap-6">
             <span className="font-display text-5xl text-dojo-white sm:text-6xl">
               {KANJI.judo}
@@ -94,25 +146,17 @@ export default function ModalidadesPage() {
           <h3 className="mb-4 font-display text-xs uppercase tracking-[0.3em] text-dojo-red">
             Sistema de faixas — CBJ
           </h3>
-          <div className="space-y-2">
-            {FAIXAS_JUDO.map((f) => (
-              <div
-                key={f.cor}
-                className="flex items-center gap-4 rounded-sm border border-dojo-white/10 bg-dojo-gray/5 p-3 transition-colors hover:border-dojo-white/20"
-              >
-                <span
-                  className={`flex h-8 w-16 items-center justify-center rounded-sm text-xs font-bold uppercase ${f.bg} ${f.text}`}
-                >
-                  {f.cor}
-                </span>
-                <span className="text-sm text-dojo-white/70">{f.desc}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+          <FaixasList faixas={FAIXAS_JUDO} ariaLabel="Sistema de faixas do Judô conforme CBJ" />
+        </motion.section>
 
         {/* Jiu-Jitsu */}
-        <section className="mb-20 border-t border-dojo-white/10 pt-12">
+        <motion.section
+          className="mb-20 border-t border-dojo-white/10 pt-16 sm:pt-20"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={cardVariants}
+        >
           <div className="mb-8 flex items-baseline gap-6">
             <span className="font-display text-5xl text-dojo-white sm:text-6xl">
               {KANJI.jiujitsu}
@@ -156,25 +200,17 @@ export default function ModalidadesPage() {
           <h3 className="mb-4 font-display text-xs uppercase tracking-[0.3em] text-dojo-red">
             Sistema de faixas — IBJJF
           </h3>
-          <div className="space-y-2">
-            {FAIXAS_BJJ.map((f) => (
-              <div
-                key={f.cor}
-                className="flex items-center gap-4 rounded-sm border border-dojo-white/10 bg-dojo-gray/5 p-3 transition-colors hover:border-dojo-white/20"
-              >
-                <span
-                  className={`flex h-8 w-16 items-center justify-center rounded-sm text-xs font-bold uppercase ${f.bg} ${f.text}`}
-                >
-                  {f.cor}
-                </span>
-                <span className="text-sm text-dojo-white/70">{f.desc}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+          <FaixasList faixas={FAIXAS_BJJ} ariaLabel="Sistema de faixas do Jiu-Jitsu conforme IBJJF" />
+        </motion.section>
 
         {/* Cerimônia de graduação */}
-        <section className="rounded-sm border border-dojo-red/30 bg-dojo-red/5 p-8 sm:p-10">
+        <motion.section
+          className="rounded-sm border border-dojo-red/30 bg-dojo-red/5 p-8 sm:p-10"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={ceremoniaVariants}
+        >
           <p className="mb-4 font-display text-xs uppercase tracking-[0.4em] text-dojo-red">
             Cerimônia de graduação
           </p>
@@ -186,14 +222,35 @@ export default function ModalidadesPage() {
             convidada. Certificado oficial assinado pelo Sensei. Registro
             digital no sistema da escola — pais recebem notificação especial.
           </p>
-          <p className="mt-4 text-sm italic text-dojo-white/50">
+          <p className="mt-4 text-sm italic text-dojo-white/60">
             Reconhecimento técnico + emoção familiar. Anos de dedicação no
             tatame celebrados como devem ser.
           </p>
+        </motion.section>
+
+        {/* Explorar também */}
+        <section className="mt-16 text-center">
+          <p className="mb-6 font-display text-xs uppercase tracking-[0.4em] text-dojo-white/50">
+            Explorar também
+          </p>
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-10">
+            <Link
+              href="/sobre"
+              className="text-xs uppercase tracking-[0.3em] text-dojo-red transition-colors hover:text-dojo-white"
+            >
+              → Sobre o Sensei
+            </Link>
+            <Link
+              href="/contato"
+              className="text-xs uppercase tracking-[0.3em] text-dojo-red transition-colors hover:text-dojo-white"
+            >
+              → Contato direto
+            </Link>
+          </div>
         </section>
 
         {/* CTA */}
-        <div className="mt-16 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+        <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
             href="/#contato"
             className="rounded-sm border border-dojo-red bg-dojo-red px-8 py-4 text-xs font-bold uppercase tracking-widest text-dojo-white transition-all hover:bg-dojo-red/90 active:scale-[0.98]"
@@ -208,6 +265,6 @@ export default function ModalidadesPage() {
           </Link>
         </div>
       </div>
-    </main>
+    </>
   );
 }
