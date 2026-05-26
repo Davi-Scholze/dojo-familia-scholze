@@ -41,6 +41,7 @@ import {
   overviewCardReveal,
   fadeOnly,
   DURATION_BASE,
+  DURATION_SLOW,
   EASE_STANDARD,
 } from "@/components/MotionConfig";
 
@@ -271,16 +272,23 @@ export function AnimatedPresenceSwap({
   motionKey,
   children,
 }: AnimatedPresenceSwapProps) {
+  // FIX design-reviewer audit 2026-05-25: useReducedMotion estava ausente.
+  // Quando reduced=true, mantemos só opacity (sem scale) pra evitar desorientação.
+  const reduced = useReducedMotion();
+  const initial = reduced ? { opacity: 0 } : { opacity: 0, scale: 0.98 };
+  const animate = reduced ? { opacity: 1 } : { opacity: 1, scale: 1 };
+  const exit = reduced ? { opacity: 0 } : { opacity: 0, scale: 0.98 };
+
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={motionKey}
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.98 }}
+        initial={initial}
+        animate={animate}
+        exit={exit}
         transition={{
-          duration: 0.4, // duration-slow
-          ease: [0.2, 0, 0, 1], // ease-standard
+          duration: DURATION_SLOW,
+          ease: EASE_STANDARD,
         }}
       >
         {children}
