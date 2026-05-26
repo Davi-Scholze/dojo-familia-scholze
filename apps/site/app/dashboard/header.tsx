@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import Image from "next/image";
 import { Button, ORG_SHORT } from "@dojo-fs/ui";
 import { signOut } from "./actions";
 
@@ -21,12 +22,13 @@ export function DashboardHeader({
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/95 px-6 py-3 backdrop-blur">
       <div className="flex items-center gap-3">
-        <img
+        <Image
           src="/logo-redondo-branco.png"
           alt={`Logo ${ORG_SHORT}`}
           width={32}
           height={32}
           className="h-8 w-8 rounded-full"
+          priority
         />
         <span className="font-display text-sm font-bold uppercase tracking-widest text-dojo-red">
           {ORG_SHORT}

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
 
 /**
  * Config Tailwind compartilhada — Dojô Família Scholze
@@ -11,8 +12,23 @@ import type { Config } from "tailwindcss";
  */
 export const sharedTailwindConfig: Partial<Config> = {
   darkMode: ["class"],
+  plugins: [animate],
   theme: {
     extend: {
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.3s cubic-bezier(0.2, 0, 0, 1)",
+        "accordion-up": "accordion-up 0.3s cubic-bezier(0.2, 0, 0, 1)",
+      },
       colors: {
         // Paleta institucional Dojô Família Scholze
         dojo: {
