@@ -59,6 +59,7 @@ export const sharedTailwindConfig: Partial<Config> = {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
         display: ["CornerStoreJF", "Inter", "sans-serif"],
+        serif: ["Cormorant Garamond", "Georgia", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
