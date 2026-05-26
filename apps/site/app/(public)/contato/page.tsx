@@ -31,7 +31,7 @@ export default function ContatoPage() {
         label="Fale com a gente"
         title="Contato"
         lead={`Resposta rápida pelo WhatsApp. Sensei ${SENSEI} mesmo responde.`}
-        bgImage="https://images.unsplash.com/photo-1753459844216-8644b13d863a?w=2400&auto=format&fit=crop"
+        bgImage="https://images.unsplash.com/photo-1656653121526-a1458317b790?w=2400&auto=format&fit=crop"
         bgAlt=""
       />
 

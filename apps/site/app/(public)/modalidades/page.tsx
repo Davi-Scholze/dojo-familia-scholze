@@ -144,27 +144,20 @@ export default function ModalidadesPage() {
           </>
         }
         lead="Judô (CBJ) + Jiu-Jitsu (IBJJF) sob o mesmo Sensei. Formação técnica completa, do iniciante absoluto à graduação avançada."
-        bgImage="https://images.unsplash.com/photo-1546638008-efbe0b62c730?w=2400&auto=format&fit=crop"
+        bgImage="https://images.unsplash.com/photo-1476525223214-c31ff100e1ae?w=2400&auto=format&fit=crop"
         bgAlt=""
       />
 
       <div className="mx-auto max-w-5xl px-6 pb-20 sm:px-8 lg:px-12">
         {/* JUDÔ */}
         <motion.section
-          className="relative mb-20 overflow-hidden border-t border-dojo-white/10 pt-16 sm:pt-20"
+          id="judo"
+          className="relative mb-20 scroll-mt-24 overflow-hidden border-t border-dojo-white/10 pt-16 sm:pt-20"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={cardVariants}
         >
-          {/* Kanji ambient decorativo */}
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-8 top-1/4 select-none font-display text-[14rem] leading-none text-dojo-white/[0.03]"
-          >
-            {KANJI.judo}
-          </span>
-
           <div className="relative">
             <div className="mb-8 flex items-baseline gap-6">
               <span className="font-display text-5xl text-dojo-white sm:text-6xl">
@@ -215,20 +208,13 @@ export default function ModalidadesPage() {
 
         {/* JIU-JITSU */}
         <motion.section
-          className="relative mb-20 overflow-hidden border-t border-dojo-white/10 pt-16 sm:pt-20"
+          id="jiu-jitsu"
+          className="relative mb-20 scroll-mt-24 overflow-hidden border-t border-dojo-white/10 pt-16 sm:pt-20"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={cardVariants}
         >
-          {/* Kanji ambient decorativo */}
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-8 top-1/4 select-none font-display text-[14rem] leading-none text-dojo-white/[0.03]"
-          >
-            {KANJI.jiujitsu}
-          </span>
-
           <div className="relative">
             <div className="mb-8 flex items-baseline gap-6">
               <span className="font-display text-5xl text-dojo-white sm:text-6xl">
@@ -287,14 +273,6 @@ export default function ModalidadesPage() {
           viewport={{ once: true, margin: "-100px" }}
           variants={ceremoniaVariants}
         >
-          {/* Quote mark decorativo */}
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-4 -top-12 select-none font-serif text-[12rem] leading-none text-dojo-white/[0.04]"
-          >
-            道
-          </span>
-
           <div className="relative">
             <p className="mb-4 font-display text-xs uppercase tracking-[0.4em] text-dojo-red">
               Cerimônia de graduação
