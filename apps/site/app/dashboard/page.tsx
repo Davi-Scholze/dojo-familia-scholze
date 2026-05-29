@@ -184,9 +184,14 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role")
+    .select("full_name, role, dojo_id")
     .eq("owner_user_id", user.id)
-    .maybeSingle<ProfileBrief>();
+    .maybeSingle<ProfileBrief & { dojo_id: string | null }>();
+
+  // Sem profile completo → manda pro onboarding (Sprint 1b: criar perfil + completar dojô)
+  if (!profile?.dojo_id) {
+    redirect("/dashboard/onboarding");
+  }
 
   const displayName = profile?.full_name ?? user.email ?? "Sensei";
   const role = profile?.role ?? "sem perfil";
