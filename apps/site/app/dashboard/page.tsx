@@ -1,8 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@dojo-fs/supabase/server";
-import { Users, Calendar, DollarSign, TrendingUp } from "lucide-react";
+import { Users, Calendar, DollarSign, Clock3 } from "lucide-react";
 import {
   ORG_NAME,
   KANJI,
@@ -13,6 +14,11 @@ import {
   CardTitle,
   CardContent,
 } from "@dojo-fs/ui";
+import {
+  diaSemanaHojeBR,
+  dataHojeBR,
+  DIAS_SHORT_PT,
+} from "../../lib/dia-semana";
 import {
   AnimatedWelcome,
   AnimatedOverviewCard,
@@ -93,60 +99,76 @@ function MetricRow({
 }
 
 /**
- * Card de seção futura (Sprint 1c+).
- * Estado "promessa elegante" — disabled mas visualmente intencionado,
- * não parece broken. Hover sutil de 150ms (duration-fast do sistema).
+ * Card de seção. Sprint 1b: 3 cards funcionais (Alunos, Turmas, Presença) +
+ * 1 placeholder (Financeiro Sprint 3).
  */
 function SectionCard({
   icon,
   title,
-  sprint,
   description,
+  href,
+  badge,
 }: {
   icon: React.ReactNode;
   title: string;
-  sprint: string;
   description: string;
+  href?: string;
+  badge?: string;
 }) {
-  return (
-    <div
-      className={[
-        "group relative flex flex-col gap-4 rounded-lg border border-dojo-gray/20",
-        "bg-dojo-gray/5 p-6 transition-all duration-150",
-        "cursor-not-allowed",
-        "hover:border-dojo-red/20 hover:bg-dojo-gray/10",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dojo-red",
-      ].join(" ")}
-      aria-label={`${title} — disponível em ${sprint}`}
-      tabIndex={0}
-      role="article"
-    >
-      {/* Badge "Em breve" — canto superior direito */}
-      <span
-        className="absolute right-4 top-4 rounded-sm bg-dojo-gray/30 px-2 py-0.5 text-xs uppercase tracking-widest text-dojo-white/40"
-        aria-hidden="true"
-      >
-        Em breve
-      </span>
+  const baseClasses = [
+    "group relative flex flex-col gap-4 rounded-lg border p-6 transition-all duration-150",
+    href
+      ? "border-dojo-gray/20 bg-dojo-gray/5 hover:border-dojo-red/40 hover:bg-dojo-gray/10 cursor-pointer"
+      : "border-dojo-gray/20 bg-dojo-gray/5 cursor-not-allowed",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dojo-red",
+  ].join(" ");
 
-      {/* Ícone */}
+  const inner = (
+    <>
+      {badge && (
+        <span
+          className="absolute right-4 top-4 rounded-sm bg-dojo-gray/30 px-2 py-0.5 text-xs uppercase tracking-widest text-dojo-white/40"
+          aria-hidden="true"
+        >
+          {badge}
+        </span>
+      )}
+
       <span
-        className="flex h-11 w-11 items-center justify-center rounded-sm bg-dojo-gray/20 text-dojo-white/30 transition-colors duration-150 group-hover:text-dojo-white/50"
+        className={`flex h-11 w-11 items-center justify-center rounded-sm bg-dojo-gray/20 transition-colors duration-150 ${
+          href
+            ? "text-dojo-white/60 group-hover:text-dojo-red"
+            : "text-dojo-white/30 group-hover:text-dojo-white/50"
+        }`}
         aria-hidden="true"
       >
         {icon}
       </span>
 
-      {/* Conteúdo */}
       <div className="space-y-1">
-        <h3 className="font-display text-base font-bold uppercase tracking-wider text-dojo-white/70">
+        <h3 className="font-display text-base font-bold uppercase tracking-wider text-dojo-white">
           {title}
         </h3>
-        <p className="text-xs text-dojo-white/30">{description}</p>
-        <p className="text-xs uppercase tracking-widest text-dojo-red/50">
-          {sprint}
-        </p>
+        <p className="text-xs text-dojo-white/40">{description}</p>
       </div>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={baseClasses} aria-label={title}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <div
+      className={baseClasses}
+      aria-label={`${title}${badge ? ` — ${badge}` : ""}`}
+      tabIndex={0}
+      role="article"
+    >
+      {inner}
     </div>
   );
 }
@@ -196,6 +218,56 @@ export default async function DashboardPage() {
   const displayName = profile?.full_name ?? user.email ?? "Sensei";
   const role = profile?.role ?? "sem perfil";
   const roleLabel = ROLE_LABEL[role] ?? role;
+
+  // ── Métricas reais Sprint 1b ──────────────────────────────────────────────
+  const diaHoje = diaSemanaHojeBR();
+  const dataHoje = dataHojeBR();
+
+  const [
+    { count: alunosAtivos },
+    { count: turmasAtivas },
+    { data: turmasComHorario },
+  ] = await Promise.all([
+    supabase
+      .from("alunos")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "ativo"),
+    supabase
+      .from("turmas")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "ativa"),
+    supabase
+      .from("turmas")
+      .select("id, nome, cor, horario_recorrente")
+      .eq("status", "ativa")
+      .returns<
+        Array<{
+          id: string;
+          nome: string;
+          cor: string;
+          horario_recorrente: Array<{
+            dia: string;
+            inicio: string;
+            fim: string;
+          }>;
+        }>
+      >(),
+  ]);
+
+  // Próximas aulas hoje: filtra slots de hoje, ordena por horario_inicio
+  const aulasHoje = (turmasComHorario ?? [])
+    .flatMap((t) =>
+      (Array.isArray(t.horario_recorrente) ? t.horario_recorrente : [])
+        .filter((s) => s.dia === diaHoje)
+        .map((s) => ({
+          turma_id: t.id,
+          nome: t.nome,
+          cor: t.cor,
+          inicio: s.inicio,
+          fim: s.fim,
+        })),
+    )
+    .sort((a, b) => a.inicio.localeCompare(b.inicio));
 
   return (
     <main
@@ -282,50 +354,99 @@ export default async function DashboardPage() {
                     <MetricRow
                       icon={<Users size={18} aria-hidden="true" />}
                       label="Alunos ativos"
-                      value="0"
+                      value={(alunosAtivos ?? 0).toString()}
                     />
                   </AnimatedMetricItem>
                   <AnimatedMetricItem role="listitem">
                     <MetricRow
                       icon={<Calendar size={18} aria-hidden="true" />}
                       label="Turmas configuradas"
-                      value="0"
+                      value={(turmasAtivas ?? 0).toString()}
                     />
                   </AnimatedMetricItem>
                   <AnimatedMetricItem role="listitem">
                     <MetricRow
-                      icon={<TrendingUp size={18} aria-hidden="true" />}
-                      label="Graduações próximas"
-                      value="0"
+                      icon={<Clock3 size={18} aria-hidden="true" />}
+                      label={`Aulas hoje (${DIAS_SHORT_PT[diaHoje]})`}
+                      value={aulasHoje.length.toString()}
                     />
                   </AnimatedMetricItem>
                   <AnimatedMetricItem role="listitem">
                     <MetricRow
                       icon={<DollarSign size={18} aria-hidden="true" />}
                       label="Mensalidades a receber"
-                      value="R$ 0"
+                      value="—"
                     />
                   </AnimatedMetricItem>
                 </AnimatedMetricList>
 
-                {/*
-                  Microcopy de estado vazio — não parece broken, parece à espera.
-                  Separado das métricas por padding generoso (rig.ai: espaço pra respirar).
-                */}
-                <p className="mt-6 text-xs uppercase tracking-widest text-dojo-white/20">
-                  Estado inicial — módulos serão configurados na Sprint 1c
-                </p>
+                {(alunosAtivos ?? 0) === 0 && (turmasAtivas ?? 0) === 0 && (
+                  <p className="mt-6 text-xs uppercase tracking-widest text-dojo-white/20">
+                    Estado inicial — comece cadastrando alunos e criando turmas
+                  </p>
+                )}
               </CardContent>
             </Card>
           </AnimatedOverviewCard>
         </section>
 
-        {/* ── 3. Grid de seções futuras ────────────────────────────────────── */}
-        {/*
-          AnimatedModuleGrid: stagger container — 80ms entre cards.
-          AnimatedCard: fade + scale 0.96→1.0 em duration-slow ease-emphasized.
-          delayChildren 700ms — cards aparecem depois que métricas terminaram.
-        */}
+        {/* ── 2.5. Timeline aulas de hoje ──────────────────────────────────── */}
+        {aulasHoje.length > 0 && (
+          <section aria-labelledby="aulas-hoje-heading" className="space-y-4">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2
+                  id="aulas-hoje-heading"
+                  className="font-display text-sm font-bold uppercase tracking-widest text-dojo-white/40"
+                >
+                  Aulas hoje
+                </h2>
+                <p className="text-xs text-dojo-white/30">
+                  {DIAS_SHORT_PT[diaHoje]} ·{" "}
+                  {new Date(dataHoje).toLocaleDateString("pt-BR", {
+                    day: "2-digit",
+                    month: "long",
+                    timeZone: "UTC",
+                  })}
+                </p>
+              </div>
+              <Link
+                href="/dashboard/presenca/hoje"
+                className="text-xs uppercase tracking-widest text-dojo-red hover:underline"
+              >
+                Ver presença →
+              </Link>
+            </div>
+
+            <ul className="space-y-2" role="list">
+              {aulasHoje.slice(0, 5).map((a, idx) => (
+                <li
+                  key={`${a.turma_id}-${idx}`}
+                  className="flex items-center gap-3 rounded-md border border-dojo-gray/20 bg-dojo-gray/5 px-4 py-3"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: a.cor }}
+                  />
+                  <span className="font-display text-xs uppercase tracking-widest text-dojo-white/50">
+                    {a.inicio.slice(0, 5)}–{a.fim.slice(0, 5)}
+                  </span>
+                  <span className="flex-1 truncate text-sm text-dojo-white">
+                    {a.nome}
+                  </span>
+                </li>
+              ))}
+              {aulasHoje.length > 5 && (
+                <li className="px-4 text-xs text-dojo-white/30">
+                  +{aulasHoje.length - 5} aulas
+                </li>
+              )}
+            </ul>
+          </section>
+        )}
+
+        {/* ── 3. Módulos operacionais Sprint 1b ────────────────────────────── */}
         <section aria-labelledby="modulos-heading">
           <div className="mb-6 space-y-1">
             <h2
@@ -334,42 +455,62 @@ export default async function DashboardPage() {
             >
               Módulos
             </h2>
-            <p className="text-xs text-dojo-white/20">
-              Funcionalidades em desenvolvimento — chegam nas próximas sprints.
+            <p className="text-xs text-dojo-white/30">
+              Acesse os módulos operacionais do dojô.
             </p>
           </div>
 
           {/*
-            Mobile-first: 1 coluna → 2 colunas (sm) → 3 colunas (lg).
-            DESIGN.md §7 e briefing §4 explícitos.
+            Mobile-first: 1 coluna → 2 colunas (sm) → 4 colunas (lg).
+            3 módulos funcionais Sprint 1b + 1 placeholder Sprint 3 (Financeiro).
           */}
           <AnimatedModuleGrid
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
             role="list"
-            aria-label="Módulos disponíveis em breve"
+            aria-label="Módulos do dojô"
           >
             <AnimatedCard role="listitem">
               <SectionCard
                 icon={<Users size={22} aria-hidden="true" />}
                 title="Alunos"
-                sprint="Sprint 1c"
-                description="Cadastro, faixas e histórico de cada aluno do dojô."
+                description={
+                  (alunosAtivos ?? 0) === 0
+                    ? "Cadastre o primeiro aluno do dojô."
+                    : `${alunosAtivos} aluno${alunosAtivos === 1 ? "" : "s"} ativo${alunosAtivos === 1 ? "" : "s"}`
+                }
+                href="/dashboard/alunos"
               />
             </AnimatedCard>
             <AnimatedCard role="listitem">
               <SectionCard
                 icon={<Calendar size={22} aria-hidden="true" />}
                 title="Turmas"
-                sprint="Sprint 1c"
-                description="Horários, modalidades e listas de presença."
+                description={
+                  (turmasAtivas ?? 0) === 0
+                    ? "Crie a primeira turma e seu horário."
+                    : `${turmasAtivas} turma${turmasAtivas === 1 ? "" : "s"} ativa${turmasAtivas === 1 ? "" : "s"}`
+                }
+                href="/dashboard/turmas"
+              />
+            </AnimatedCard>
+            <AnimatedCard role="listitem">
+              <SectionCard
+                icon={<Clock3 size={22} aria-hidden="true" />}
+                title="Presença"
+                description={
+                  aulasHoje.length === 0
+                    ? "Nenhuma aula hoje."
+                    : `${aulasHoje.length} aula${aulasHoje.length === 1 ? "" : "s"} hoje`
+                }
+                href="/dashboard/presenca/hoje"
               />
             </AnimatedCard>
             <AnimatedCard role="listitem">
               <SectionCard
                 icon={<DollarSign size={22} aria-hidden="true" />}
                 title="Financeiro"
-                sprint="Sprint 3"
-                description="Mensalidades, inadimplência e relatórios de caixa."
+                description="Mensalidades, inadimplência e relatórios."
+                badge="Sprint 3"
               />
             </AnimatedCard>
           </AnimatedModuleGrid>
