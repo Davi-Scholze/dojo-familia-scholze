@@ -63,7 +63,6 @@ export async function marcarPresenca(
     .maybeSingle<{ id: string }>();
 
   if (existing?.id) {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const { error } = await (supabase.from("presencas") as any)
       .update({
         presenca_status: statusParse.data,
@@ -71,7 +70,6 @@ export async function marcarPresenca(
         marcada_por: profile.id,
       })
       .eq("id", existing.id);
-    /* eslint-enable @typescript-eslint/no-explicit-any */
     if (error) return { ok: false, message: error.message };
   } else {
     const insert: TablesInsert<"presencas"> = {
@@ -81,9 +79,7 @@ export async function marcarPresenca(
       presenca_em: nowIso,
       marcada_por: profile.id,
     };
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const { error } = await (supabase.from("presencas") as any).insert(insert);
-    /* eslint-enable @typescript-eslint/no-explicit-any */
     if (error) return { ok: false, message: error.message };
   }
 
@@ -113,7 +109,6 @@ export async function fecharAula(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "Sessão expirada." };
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const { error } = await (supabase.from("aulas") as any)
     .update({
       planejamento_cumprido: planejamentoCumprido,
@@ -121,7 +116,6 @@ export async function fecharAula(
       fechada_em: new Date().toISOString(),
     })
     .eq("id", aulaId);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (error) return { ok: false, message: error.message };
 

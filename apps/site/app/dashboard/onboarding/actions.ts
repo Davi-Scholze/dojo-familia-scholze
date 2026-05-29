@@ -112,10 +112,8 @@ export async function completarOnboarding(
   // TS inference do supabase-js encadeada com `Database` regenerado falha em
   // `.insert/.update` — single cast contorna sem perder validação Zod (acima).
   // Tech debt: refatorar quando upgrade supabase-js v3 chegar.
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const { error: profileErr } = await (supabase.from("profiles") as any)
     .insert(profileInsert);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (profileErr) {
     if (/duplicate|unique/i.test(profileErr.message)) {
@@ -137,11 +135,9 @@ export async function completarOnboarding(
     whatsapp: parsed.data.whatsapp,
   };
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const { error: dojoUpdateErr } = await (supabase.from("dojos") as any)
     .update(dojoUpdate)
     .eq("id", dojo.id);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (dojoUpdateErr) {
     // Profile criado com sucesso; dojo update falhou — não bloqueia entrada no dashboard.

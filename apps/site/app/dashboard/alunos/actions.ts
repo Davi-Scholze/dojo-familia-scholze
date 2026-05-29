@@ -125,9 +125,7 @@ export async function criarAluno(
     observacoes: parsed.data.observacoes,
   };
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const { error } = await (supabase.from("alunos") as any).insert(insert);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (error) {
     return { ok: false, message: `Erro ao cadastrar aluno: ${error.message}` };

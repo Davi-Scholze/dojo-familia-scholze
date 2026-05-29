@@ -110,12 +110,10 @@ export default async function PresencaHojePage() {
       }),
     );
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     await (supabase.from("aulas") as any).upsert(aulasUpsert, {
       onConflict: "turma_id,data,horario_inicio",
       ignoreDuplicates: true,
     });
-    /* eslint-enable @typescript-eslint/no-explicit-any */
   }
 
   // 4. Re-fetch aulas hoje

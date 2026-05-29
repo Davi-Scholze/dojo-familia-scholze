@@ -113,9 +113,7 @@ export async function criarTurma(
     cor: parsed.data.cor,
   };
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const { error } = await (supabase.from("turmas") as any).insert(insert);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (error) {
     return { ok: false, message: `Erro ao cadastrar turma: ${error.message}` };
